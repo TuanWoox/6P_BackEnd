@@ -1,9 +1,8 @@
 const OTP = require("../models/OTP");
 
 class OTPDAO {
-  async hasValidOTP(phoneNumber, email) {
+  async hasValidOTP(email) {
     const otp = await OTP.findOne({
-      phoneNumber,
       email,
       expiresAt: { $gt: Date.now() },
     });
