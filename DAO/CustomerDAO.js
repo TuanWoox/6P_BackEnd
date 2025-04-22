@@ -19,5 +19,16 @@ class CustomerDAO {
       throw err;
     }
   }
+  async getCustomerName(customerId) {
+    try {
+      const { fullName } = await Customer.findById(customerId);
+      if (!fullName) {
+        return null;
+      }
+      return fullName;
+    } catch (err) {
+      throw err;
+    }
+  }
 }
 module.exports = new CustomerDAO();

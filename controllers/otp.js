@@ -1,6 +1,7 @@
 const OTPDAO = require("../DAO/OTPDAO"); // path may vary
 const OTP = require("../models/OTP");
 const sendMail = require("../nodemailer/sendMail");
+const { generateOTPToken } = require("../utils/utils");
 
 const createAndSendOtp = async (email, type) => {
   // Check for existing valid OTP
@@ -34,7 +35,7 @@ const createAndSendOtp = async (email, type) => {
 // Controller for signup OTP
 module.exports.createOTP = async (req, res, next) => {
   const { email, type } = req.body;
-  console.log(email, type);
+
   try {
     await createAndSendOtp(email, type);
     return res.status(200).json({
@@ -68,8 +69,14 @@ module.exports.verifyOTP = async (req, res, next) => {
       return res.status(400).json({ message: "Mã OTP đã hết hạn." });
     }
 
+    const newOTPToken = generateOTPToken(foundOTP.email);
     await OTPDAO.deleteById(foundOTP._id);
-
+    res.cookie("OTPToken", newOTPToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 1 * 120 * 1000,
+    });
     return res.status(200).json({ message: "Xác minh OTP thành công!" });
   } catch (err) {
     console.error("OTP verify error:", err);

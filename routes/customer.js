@@ -2,8 +2,9 @@ const express = require("express");
 const router = express.Router({ mergeParams: true });
 const authMiddleware = require("../middlewares/authMiddleware");
 const customerController = require("../controllers/customer");
+
 router
-  .route("/getCustomerProfile")
-  .get(authMiddleware.authenticateToken, customerController.getCustomerProfile);
+  .route("/getName")
+  .post(authMiddleware.authenticateToken, customerController.getName);
 
 module.exports = router;

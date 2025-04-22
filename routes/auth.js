@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router({ mergeParams: true });
 const authController = require("../controllers/auth");
 const authMiddleware = require("../middlewares/authMiddleware");
-router.route("/logIn").post(authController.login);
+router.route("/logIn").post(authMiddleware.antiByPass, authController.login);
 router.route("/refreshToken").post(authController.refreshToken);
 router.route("/validateJWT").post(authController.validateJWT);
 router.route("/checkAccount").post(authController.checkAccount);

@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const Customer = require("../models/customer");
 const CustomerDAO = require("../DAO/CustomerDAO");
 const AuthDAO = require("../DAO/AuthDAO");
+const { generateAccessToken, generateRefreshToken } = require("../utils/utils");
 module.exports.signUp = async (req, res, next) => {
   const newCustomer = new Customer({
     ...req.body.customer,
@@ -34,7 +35,6 @@ module.exports.checkAccount = async (req, res, next) => {
       message: "Thông tin đăng nhập không chính xác",
     });
   } catch (e) {
-    console.error(e); // Useful for debugging
     return res.status(500).json({ message: "Lỗi máy chủ nội bộ" });
   }
 };
@@ -60,33 +60,39 @@ module.exports.isEmailAvailable = async (req, res, next) => {
 };
 
 module.exports.login = async (req, res, next) => {
+  const { email: antiByPassEmail } = req.antiByPass || {};
   const { email, password } = req.body;
+
+  // Check if anti-bypass email is present and matches the request email
+  if (!antiByPassEmail || email !== antiByPassEmail) {
+    return res.status(401).json({ message: "Forbidden" });
+  }
+
   try {
     const foundCustomer = await AuthDAO.login(email, password);
     if (foundCustomer) {
       const accessToken = generateAccessToken(foundCustomer);
       const refreshToken = generateRefreshToken(foundCustomer);
       await AuthDAO.storeRefreshToken(foundCustomer, refreshToken);
+
       // Set tokens as HTTP-only cookies
       res.cookie("accessToken", accessToken, {
-        httpOnly: true, // Prevents JavaScript access
-        secure: process.env.NODE_ENV === "production", // HTTPS only in production
-        sameSite: "strict", // Prevents CSRF attacks
-        maxAge: 15 * 60 * 1000, // 15 minutes (matches token expiry)
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 15 * 60 * 1000, // 15 minutes
       });
 
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
-        path: "/auth", // Only sent to refresh endpoint
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/auth",
       });
-
-      return res.status(200).json({
-        message: "Login Successfully",
-      });
+      res.clearCookie("OTPToken", { path: "/" }); // Ensure the path is correct
+      return res.status(200).json({ message: "Login Successfully" });
     }
+
     return res.status(400).json({ message: "Sai tài khoản hoặc mật khẩu" });
   } catch (e) {
     return res.status(500).json({ message: "Internal Server Errors" });
@@ -146,8 +152,8 @@ module.exports.logout = async (req, res, next) => {
     }
 
     // Clear cookies
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
+    res.clearCookie("accessToken", { path: "/" }); // Ensure the path is correct
+    res.clearCookie("refreshToken", { path: "/auth" }); // Ensure the path is correct
 
     return res.status(200).json({ message: "Đăng xuất thành công" });
   } catch (err) {
@@ -174,30 +180,4 @@ module.exports.validateJWT = async (req, res) => {
       message: "Validate Successfully",
     });
   });
-};
-
-const generateAccessToken = (foundCustomer) => {
-  const accessToken = jwt.sign(
-    {
-      customerId: foundCustomer._id,
-      email: foundCustomer.email,
-      fullName: foundCustomer.fullName,
-    },
-    process.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "15m",
-    }
-  );
-  return accessToken;
-};
-const generateRefreshToken = (foundCustomer) => {
-  const refreshToken = jwt.sign(
-    {
-      customerId: foundCustomer._id,
-      email: foundCustomer.email,
-      fullName: foundCustomer.fullName,
-    },
-    process.env.JWT_REFRESH_SECRET_KEY
-  );
-  return refreshToken;
 };

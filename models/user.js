@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
+const CheckingAccount = require("./checkingAccount");
+const { generateUniqueAccountNumber } = require("../utils/utils");
 const { Schema } = mongoose;
 
 const options = { discriminatorKey: "userType", timestamps: true };
@@ -40,6 +42,25 @@ userSchema.pre("save", async function (next) {
     );
   }
   next();
+});
+userSchema.post("save", async function (user, next) {
+  try {
+    const existing = await CheckingAccount.findOne({ owner: user._id });
+    const number = await generateUniqueAccountNumber();
+    if (!existing) {
+      await CheckingAccount.create({
+        accountNumber: number,
+        owner: user._id,
+        balance: 50000,
+        overdraftProtection: true,
+        status: "ACTIVE",
+      });
+    }
+    next(); // ✅ fixed typo
+  } catch (err) {
+    console.error("Error creating checking account:", err);
+    next(err);
+  }
 });
 
 module.exports = mongoose.model("User", userSchema);

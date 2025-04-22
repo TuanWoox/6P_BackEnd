@@ -6,6 +6,7 @@ const app = express();
 const authRoute = require("./routes/auth");
 const otpRoute = require("./routes/otp");
 const customerRoute = require("./routes/customer");
+const checkingAccountRoute = require("./routes/checkingAccount");
 const cookieParser = require("cookie-parser");
 
 app.use(
@@ -26,6 +27,7 @@ connectDB();
 app.use("/auth", authRoute);
 app.use("/otp", otpRoute);
 app.use("/customer", customerRoute);
+app.use("/checkingAccount", checkingAccountRoute);
 
 app.listen(PORT, () =>
   console.log(`Server running on http://localhost:${PORT}`)
