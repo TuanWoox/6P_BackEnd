@@ -32,36 +32,13 @@ const createAndSendOtp = async (email, type) => {
 };
 
 // Controller for signup OTP
-module.exports.createSignUpOtp = async (req, res, next) => {
-  const { email } = req.body;
-
+module.exports.createOTP = async (req, res, next) => {
+  const { email, type } = req.body;
+  console.log(email, type);
   try {
-    await createAndSendOtp(email, "register");
+    await createAndSendOtp(email, type);
     return res.status(200).json({
       message: "OTP đã được gửi thành công!",
-    });
-  } catch (err) {
-    if (err.message === "OTP_EXISTS") {
-      return res.status(400).json({
-        message:
-          "Bạn đã có mã OTP, xin vui lòng kiểm tra email hoặc đợi mã hết hạn.",
-      });
-    }
-
-    return res.status(500).json({
-      message: "Lỗi máy chủ, vui lòng thử lại.",
-    });
-  }
-};
-
-// Controller for login OTP
-module.exports.createLoginOtp = async (req, res, next) => {
-  const { email } = req.body;
-
-  try {
-    await createAndSendOtp(email, "login");
-    return res.status(200).json({
-      message: "OTP xác thực đăng nhập đã được gửi thành công!",
     });
   } catch (err) {
     if (err.message === "OTP_EXISTS") {

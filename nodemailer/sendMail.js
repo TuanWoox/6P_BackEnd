@@ -86,7 +86,7 @@ async function sendMail(to, type, data) {
       `;
       break;
 
-    case "login":
+    case "logIn":
       subject = "Xác thực đăng nhập - 6P Bank";
       html = `
       <html>

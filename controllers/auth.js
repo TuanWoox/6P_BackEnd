@@ -18,6 +18,27 @@ module.exports.signUp = async (req, res, next) => {
     });
   }
 };
+module.exports.checkAccount = async (req, res, next) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email và mật khẩu là bắt buộc" });
+  }
+  try {
+    const foundUser = await AuthDAO.login(email, password);
+
+    if (foundUser) {
+      return res.status(200).json({ message: "Email và mật khẩu hợp lệ" });
+    }
+    return res.status(401).json({
+      message: "Thông tin đăng nhập không chính xác",
+    });
+  } catch (e) {
+    console.error(e); // Useful for debugging
+    return res.status(500).json({ message: "Lỗi máy chủ nội bộ" });
+  }
+};
+
 module.exports.isEmailAvailable = async (req, res, next) => {
   try {
     const { email } = req.query;
@@ -58,7 +79,7 @@ module.exports.login = async (req, res, next) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
-        path: "/api/auth/refresh", // Only sent to refresh endpoint
+        path: "/auth", // Only sent to refresh endpoint
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
@@ -97,17 +118,8 @@ module.exports.refreshToken = async (req, res, next) => {
           res.clearCookie("refreshToken");
           return res.status(403).json({ message: "Xác thực token thất bại" });
         }
-
-        // Delete the old refresh token
-        await AuthDAO.deleteRefreshToken(refreshToken);
-
         // Generate new tokens
         const newAccessToken = generateAccessToken(user);
-        const newRefreshToken = generateRefreshToken(user);
-
-        // Store new refresh token
-        await AuthDAO.storeRefreshToken(user.customerId, newRefreshToken);
-
         // Set new cookies
         res.cookie("accessToken", newAccessToken, {
           httpOnly: true,
@@ -115,15 +127,6 @@ module.exports.refreshToken = async (req, res, next) => {
           sameSite: "strict",
           maxAge: 15 * 60 * 1000,
         });
-
-        res.cookie("refreshToken", newRefreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
-          path: "/api/auth/refresh",
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
-
         return res.status(200).json({
           message: "Token refreshed successfully",
         });
@@ -137,7 +140,6 @@ module.exports.refreshToken = async (req, res, next) => {
 module.exports.logout = async (req, res, next) => {
   // Get refresh token from cookie
   const refreshToken = req.cookies.refreshToken;
-
   try {
     if (refreshToken) {
       await AuthDAO.deleteRefreshToken(refreshToken);

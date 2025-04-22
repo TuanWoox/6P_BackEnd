@@ -5,6 +5,7 @@ const authMiddleware = require("../middlewares/authMiddleware");
 router.route("/logIn").post(authController.login);
 router.route("/refreshToken").post(authController.refreshToken);
 router.route("/validateJWT").post(authController.validateJWT);
+router.route("/checkAccount").post(authController.checkAccount);
 router
   .route("/logOut")
   .post(authMiddleware.authenticateToken, authController.logout);

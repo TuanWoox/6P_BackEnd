@@ -7,6 +7,7 @@ const otpSchema = new Schema({
     required: true,
   },
   email: String,
+  type: String,
   expiresAt: {
     type: Date,
     required: true,
