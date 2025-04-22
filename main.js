@@ -6,6 +6,7 @@ const app = express();
 const authRoute = require("./routes/auth");
 const otpRoute = require("./routes/otp");
 const customerRoute = require("./routes/customer");
+const transactionRoute = require("./routes/transaction");
 const checkingAccountRoute = require("./routes/checkingAccount");
 const cookieParser = require("cookie-parser");
 
@@ -26,6 +27,7 @@ const PORT = process.env.PORT || 5000;
 connectDB();
 app.use("/auth", authRoute);
 app.use("/otp", otpRoute);
+app.use("/transaction", transactionRoute);
 app.use("/customer", customerRoute);
 app.use("/checkingAccount", checkingAccountRoute);
 
