@@ -18,13 +18,13 @@ module.exports.generateUniqueAccountNumber = async () => {
 module.exports.generateAccessToken = (foundCustomer) => {
   const accessToken = jwt.sign(
     {
-      customerId: foundCustomer._id,
+      customerId: foundCustomer._id || foundCustomer.customerId,
       email: foundCustomer.email,
       fullName: foundCustomer.fullName,
     },
     process.env.JWT_SECRET_KEY,
     {
-      expiresIn: "15m",
+      expiresIn: "15s",
     }
   );
   return accessToken;

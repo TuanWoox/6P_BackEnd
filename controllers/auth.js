@@ -109,6 +109,7 @@ module.exports.refreshToken = async (req, res, next) => {
 
   try {
     const foundRefreshToken = await AuthDAO.fetchRefreshToken(refreshToken);
+
     if (!foundRefreshToken) {
       // Clear the invalid cookie
       res.clearCookie("refreshToken");
