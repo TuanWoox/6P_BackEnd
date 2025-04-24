@@ -84,4 +84,27 @@ transactionSchema.pre('save', function (next) {
   next();
 });
 
+transactionSchema.statics.createTransfer = async function ({
+  amount,
+  description,
+  sourceAccountID,
+  destinationAccountID,
+  session,
+}) {
+  return this.create(
+    [
+      {
+        type: "TRANSFER",
+        amount,
+        description,
+        sourceAccountID,
+        destinationAccountID,
+        status: "Completed",
+      },
+    ],
+    { session }
+  );
+};
+
+
 module.exports = mongoose.model('Transaction', transactionSchema);

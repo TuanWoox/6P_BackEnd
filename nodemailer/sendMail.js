@@ -209,18 +209,6 @@ async function sendMail(to, type, data) {
           <div class="container">
             <h2>Xác Nhận Giao Dịch Chuyển Tiền</h2>
             <p>Chào bạn,</p>
-            <p>Chúng tôi đã nhận được yêu cầu chuyển tiền từ tài khoản của bạn. Chi tiết giao dịch như sau:</p>
-            
-            <div class="transaction">
-              <p><strong>Từ tài khoản:</strong> ${data.fromAccount || "N/A"}</p>
-              <p><strong>Đến tài khoản:</strong> ${data.toAccount || "N/A"}</p>
-              <p><strong>Số tiền:</strong> ${data.amount || "N/A"} VND</p>
-              <p><strong>Nội dung:</strong> ${data.message || "Không có"}</p>
-              <p><strong>Thời gian:</strong> ${
-                data.timestamp || new Date().toLocaleString("vi-VN")
-              }</p>
-            </div>
-            
             <p>Để xác nhận giao dịch này, vui lòng sử dụng mã OTP sau:</p>
             <h3 class="otp">${data.otp}</h3>
             <p><strong>Mã OTP có hiệu lực trong vòng 2 phút.</strong></p>

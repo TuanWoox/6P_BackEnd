@@ -2,7 +2,7 @@ const TransactionDAO = require("../DAO/TransactionDAO");
 
 module.exports.getTransactionHistory = async (req, res) => {
     try {
-      const userId = req.userId;
+      const userId = req.user.customerId;
       const history = await TransactionDAO.getHistoryByUserId(userId);
       res.status(200).json(history);
     } catch (error) {

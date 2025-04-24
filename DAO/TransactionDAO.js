@@ -6,7 +6,6 @@ class TransactionDAO {
     try {
         const accounts = await Account.find({ owner: userId });
         const accountNumbers = accounts.map(acc => acc.accountNumber);
-    
         if (accountNumbers.length === 0) {
           return []; 
         }

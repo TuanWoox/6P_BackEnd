@@ -9,5 +9,23 @@ router
     authMiddleware.authenticateToken,
     checkingAccountController.getCheckingAccount
   );
+router
+  .route("/getAllCheckingAccount")
+  .get(
+    authMiddleware.authenticateToken,
+    checkingAccountController.getAllCheckingAccount
+  );
 
+router 
+  .route("/checkAvilableTargetAccount/:targetAccount")
+  .get(
+    checkingAccountController.checkAvilableTargetAccount
+  );
+
+router
+  .route("/transferMoney")
+  .post(
+    authMiddleware.authenticateToken,
+    checkingAccountController.transferMoney
+  );
 module.exports = router;
