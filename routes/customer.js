@@ -4,7 +4,10 @@ const authMiddleware = require("../middlewares/authMiddleware");
 const customerController = require("../controllers/customer");
 
 router
-  .route("/getName")
-  .post(authMiddleware.authenticateToken, customerController.getName);
+  .route("/getSideBarInformation")
+  .get(
+    authMiddleware.authenticateToken,
+    customerController.getInformationForSideBar
+  );
 
 module.exports = router;
