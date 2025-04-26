@@ -7,4 +7,12 @@ router
   .route("/getName")
   .post(authMiddleware.authenticateToken, customerController.getName);
 
+router
+  .route("/getEmail")
+  .post(authMiddleware.authenticateToken, customerController.getEmail);
+
+router
+  .route("/changePassword")
+  .post(authMiddleware.authenticateToken, customerController.changePassword);
+
 module.exports = router;
