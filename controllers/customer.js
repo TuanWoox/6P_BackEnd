@@ -3,6 +3,7 @@ const CheckingAccountDAO = require("../DAO/CheckingAccountDAO");
 
 module.exports.getInformationForSideBar = async (req, res, next) => {
   const { customerId } = req.user;
+  // console.log(customerId);
   try {
     const fullName = await CustomerDAO.getCustomerName(customerId);
     const checkingAccount = await CheckingAccountDAO.getCheckingAccount(
