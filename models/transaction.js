@@ -1,14 +1,14 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const ETransactionType = [
-  'DEPOSIT',
-  'WITHDRAWAL',
-  'TRANSFER',
-  'REFUND',
-  'RECEIVED',
+  "DEPOSIT",
+  "WITHDRAWAL",
+  "TRANSFER",
+  "REFUND",
+  "RECEIVED",
 ];
 
-const ETransactionStatus = ['Pending', 'Completed', 'Failed', 'REJECTED'];
+const ETransactionStatus = ["Pending", "Completed", "Failed", "REJECTED"];
 
 const transactionSchema = new mongoose.Schema(
   {
@@ -49,7 +49,7 @@ const transactionSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ETransactionStatus,
-      default: 'Completed',
+      default: "Completed",
     },
   },
   {
@@ -60,23 +60,23 @@ const transactionSchema = new mongoose.Schema(
 );
 
 // Ảo hóa liên kết đến tài khoản nguồn
-transactionSchema.virtual('sourceAccount', {
-  ref: 'Account',
-  localField: 'sourceAccountID',
-  foreignField: 'accountNumber',
+transactionSchema.virtual("sourceAccount", {
+  ref: "Account",
+  localField: "sourceAccountID",
+  foreignField: "accountNumber",
   justOne: true,
 });
 
 // Ảo hóa liên kết đến tài khoản đích
-transactionSchema.virtual('destinationAccount', {
-  ref: 'Account',
-  localField: 'destinationAccountID',
-  foreignField: 'accountNumber',
+transactionSchema.virtual("destinationAccount", {
+  ref: "Account",
+  localField: "destinationAccountID",
+  foreignField: "accountNumber",
   justOne: true,
 });
 
 // Sinh transactionID từ ObjectId
-transactionSchema.pre('save', function (next) {
+transactionSchema.pre("save", function (next) {
   if (this.isNew) {
     const hex = this._id.toHexString().substring(0, 8);
     this.transactionID = parseInt(hex, 16);
@@ -84,27 +84,4 @@ transactionSchema.pre('save', function (next) {
   next();
 });
 
-transactionSchema.statics.createTransfer = async function ({
-  amount,
-  description,
-  sourceAccountID,
-  destinationAccountID,
-  session,
-}) {
-  return this.create(
-    [
-      {
-        type: "TRANSFER",
-        amount,
-        description,
-        sourceAccountID,
-        destinationAccountID,
-        status: "Completed",
-      },
-    ],
-    { session }
-  );
-};
-
-
-module.exports = mongoose.model('Transaction', transactionSchema);
+module.exports = mongoose.model("Transaction", transactionSchema);

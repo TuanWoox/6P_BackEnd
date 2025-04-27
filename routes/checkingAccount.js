@@ -16,11 +16,9 @@ router
     checkingAccountController.getAllCheckingAccount
   );
 
-router 
+router
   .route("/checkAvilableTargetAccount/:targetAccount")
-  .get(
-    checkingAccountController.checkAvilableTargetAccount
-  );
+  .get(checkingAccountController.checkAvilableTargetAccount);
 
 router
   .route("/transferMoney")
