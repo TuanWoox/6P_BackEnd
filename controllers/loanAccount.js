@@ -18,6 +18,7 @@ module.exports.getAllLoanAccounts = async (req, res, next) => {
 };
 
 module.exports.getLoanAccount = async (req, res, next) => {
+  const { customerId } = req.user;
   const { loanAccountId } = req.params; // id của LoanAccount truyền qua URL
 
   try {
@@ -29,16 +30,21 @@ module.exports.getLoanAccount = async (req, res, next) => {
       return res.status(404).json({ message: "Không thể tìm thấy khoản vay" });
     }
 
+    // Kiểm tra quyền truy cập
+    if (String(foundLoanAccount.owner) !== String(customerId)) {
+      return res
+        .status(403)
+        .json({ message: "Bạn không có quyền xem khoản vay này" });
+    }
+
     // Fetch all payments for this loan account
     const loanPayments = await LoanPaymentDAO.getAllLoanPaymentsByLoanAccountId(
       loanAccountId
     );
 
-    console.log(foundLoanAccount);
     // Return both the loan account and its payments
     return res.status(200).json({
       ...foundLoanAccount.toObject(), // convert Mongoose document to plain object if needed
-
       loanPayments: loanPayments || [],
     });
   } catch (err) {

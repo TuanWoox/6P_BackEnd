@@ -12,6 +12,6 @@ router
 
 router
   .route("/details/:loanAccountId")
-  .get(loanAccountController.getLoanAccount);
+  .get(authMiddleware.authenticateToken, loanAccountController.getLoanAccount);
 
 module.exports = router;
