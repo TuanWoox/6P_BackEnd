@@ -1,4 +1,5 @@
 const Customer = require("../models/customer");
+const bcrypt = require("bcrypt");
 
 class CustomerDAO {
   async createCustomer(newCustomer) {
@@ -26,6 +27,37 @@ class CustomerDAO {
         return null;
       }
       return fullName;
+    } catch (err) {
+      throw err;
+    }
+  }
+  async getCustomerEmail(customerId) {
+    try {
+      const { email } = await Customer.findById(customerId);
+      if (!email) {
+        return null;
+      }
+      return email;
+    } catch (err) {
+      throw err;
+    }
+  }
+  async changePassword(customerId, oldPassword, newPassword) {
+    try {
+      const customer = await this.getCustomerProfile(customerId);
+      if (!customer) {
+        return { success: false, error: "Không tìm thấy tài khoản" };
+      }
+
+      const isMatch = await bcrypt.compare(oldPassword, customer.password);
+      if (!isMatch) {
+        return { success: false, error: "Mật khẩu hiện tại không đúng" };
+      }
+
+      customer.password = newPassword; // The pre-save hook will hash this
+      await customer.save();
+
+      return { success: true };
     } catch (err) {
       throw err;
     }
