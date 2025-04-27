@@ -6,9 +6,7 @@ router.route("/logIn").post(authMiddleware.antiByPass, authController.login);
 router.route("/refreshToken").post(authController.refreshToken);
 router.route("/validateJWT").post(authController.validateJWT);
 router.route("/checkAccount").post(authController.checkAccount);
-router
-  .route("/logOut")
-  .post(authMiddleware.authenticateToken, authController.logout);
+router.route("/logOut").post(authController.logout);
 router.route("/isEmailAvailable").get(authController.isEmailAvailable);
 router.route("/signUp").post(authController.signUp);
 module.exports = router;
