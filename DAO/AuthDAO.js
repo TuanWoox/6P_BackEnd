@@ -12,6 +12,19 @@ class AuthDAO {
       throw err;
     }
   }
+  async identityVerification(fullName, nationalID, email){
+    try {
+      const foundUser = await Customer.findOne({ fullName, nationalID, email });
+      if (foundUser) {
+        return foundUser;
+      } else {
+        return null; // User not found
+      } 
+    } catch (err) {
+      throw err; // Re-throw the error for handling upstream
+    }
+    
+  }
   async login(email, password) {
     try {
       const foundCustomer = await Customer.findOne({ email });

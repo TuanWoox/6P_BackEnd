@@ -58,7 +58,46 @@ module.exports.isEmailAvailable = async (req, res, next) => {
       .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
   }
 };
+module.exports.checkEmailAvailable = async (req, res, next) => {
+  try {
+    const { email } = req.query;
 
+    if (!email) {
+      return res.status(400).json({ message: "Email không được để trống" });
+    }
+    const foundUser = await AuthDAO.isEmailAvailable(email);
+
+    if (!foundUser) {
+      return res.status(409).json({ message: "Email chưa có người đăng kí" });
+    }
+    return res.status(200).json({ message: "Email đã có người đăng kí" });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
+}
+module.exports.identityVerification = async (req, res, next) => {
+  const { fullName, nationalID, email } = req.body;
+  if (!fullName || !nationalID || !email) {
+    return res.status(400).json({ message: "Thiếu thông tin cần thiết" });
+  }
+
+  try {
+    const foundUser = await AuthDAO.identityVerification(
+      fullName,
+      nationalID,
+      email
+    );
+    if (foundUser) {
+      return res.status(200).json({ message: "Xác thực thành công" });
+    } else {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+  } catch (error) {
+    return res.status(500).json({ message: "Lỗi máy chủ nội bộ" });
+  }
+}
 module.exports.login = async (req, res, next) => {
   const { email: antiByPassEmail } = req.antiByPass || {};
   const { email, password } = req.body;

@@ -30,5 +30,27 @@ class CustomerDAO {
       throw err;
     }
   }
+  async getCustomerIdByEmailandNationalID(email, nationalID) {
+    try {
+      const foundUser = await Customer.findOne({
+        email: email,
+        nationalID: nationalID,
+      });
+      if (!foundUser) {
+        return null;
+      }
+      return foundUser._id;
+    } catch (err) {
+      throw err;
+    }
+  }
+  async resetPassword(customer, newPassword) {
+    try{
+      customer.password = newPassword;
+      await customer.save();
+    } catch (err) {
+      throw err;
+    }
+  }
 }
 module.exports = new CustomerDAO();
