@@ -8,5 +8,7 @@ router.route("/validateJWT").post(authController.validateJWT);
 router.route("/checkAccount").post(authController.checkAccount);
 router.route("/logOut").post(authController.logout);
 router.route("/isEmailAvailable").get(authController.isEmailAvailable);
+router.route("/checkEmailAvailable").get(authController.checkEmailAvailable);
+router.route("/identityVerification").post(authController.identityVerification);
 router.route("/signUp").post(authController.signUp);
 module.exports = router;
