@@ -9,5 +9,25 @@ router
     authMiddleware.authenticateToken,
     customerController.getInformationForSideBar
   );
+router
+  .route("/resetPassword")
+  .post(
+    // authMiddleware.authenticateToken,
+    customerController.resetPassword
+  );
+router
+  .route("/getCustomerID")
+  .post(
+    // authMiddleware.authenticateToken,
+    customerController.getCustomerID
+  );
+
+router
+  .route("/getEmail")
+  .post(authMiddleware.authenticateToken, customerController.getEmail);
+
+router
+  .route("/changePassword")
+  .post(authMiddleware.authenticateToken, customerController.changePassword);
 
 module.exports = router;

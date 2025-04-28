@@ -12,6 +12,19 @@ class AuthDAO {
       throw err;
     }
   }
+  async identityVerification(fullName, nationalID, email){
+    try {
+      const foundUser = await Customer.findOne({ fullName, nationalID, email });
+      if (foundUser) {
+        return foundUser;
+      } else {
+        return null; // User not found
+      } 
+    } catch (err) {
+      throw err; // Re-throw the error for handling upstream
+    }
+    
+  }
   async login(email, password) {
     try {
       const foundCustomer = await Customer.findOne({ email });
@@ -58,6 +71,27 @@ class AuthDAO {
   async deleteRefreshToken(refreshToken) {
     try {
       await RefreshToken.deleteOne({ value: refreshToken });
+    } catch (err) {
+      throw err;
+    }
+  }
+  async changePassword(customerId, oldPassword, newPassword) {
+    try {
+      const foundCustomer = await Customer.findById(customerId);
+      if (!foundCustomer) {
+        return { success: false, error: "Không tìm thấy tài khoản" };
+      }
+
+      const isMatch = await bcrypt.compare(oldPassword, foundCustomer.password);
+      if (!isMatch) {
+        return { success: false, error: "Mật khẩu hiện tại không đúng" };
+      }
+
+      // The password will be hashed by the pre-save hook in the User model
+      foundCustomer.password = newPassword;
+      await foundCustomer.save();
+
+      return { success: true };
     } catch (err) {
       throw err;
     }
