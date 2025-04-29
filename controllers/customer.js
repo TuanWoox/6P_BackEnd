@@ -116,7 +116,6 @@ module.exports.getCustomerProfile = async (req, res, next) => {
 module.exports.updateCustomerProfile = async (req, res, next) => {
   const { customerId } = req.user;
   const { fullName, email, phoneNumber, dateOfBirth, address } = req.body.customer;
-  console.log(req.body.customer.email);
   if (!fullName || !email || !phoneNumber || !dateOfBirth || !address) {
     return res.status(400).json({ message: "Thiếu thông tin cần thiết" });
   }
