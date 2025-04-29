@@ -26,6 +26,15 @@ class LoanAccountDAO {
       throw err;
     }
   }
+
+  async createLoanAccount(loanAccountInstance) {
+    try {
+      return loanAccountInstance.save();
+    } catch (err) {
+      console.error("Lỗi trong DAO (createLoanAccount):", error.message);
+      throw err;
+    }
+  }
 }
 
 module.exports = new LoanAccountDAO();

@@ -1,7 +1,10 @@
+const CheckingAccountDAO = require("../DAO/CheckingAccountDAO");
 const LoanAccountDAO = require("../DAO/LoanAccountDAO");
 const LoanPaymentDAO = require("../DAO/LoanPaymentDAO");
 const LoanTypeDAO = require("../DAO/LoanTypeDAO");
 const LoanTypeInterestRatesDAO = require("../DAO/LoanTypeInterestRatesDAO");
+const LoanAccount = require("../models/loanAccount");
+// const LoanAccount = require("../models/LoanAccount");
 
 module.exports.getAllLoanAccounts = async (req, res, next) => {
   const { customerId } = req.user;
@@ -12,6 +15,18 @@ module.exports.getAllLoanAccounts = async (req, res, next) => {
       await LoanAccountDAO.getAllLoanAccountsByCustomerId(customerId);
     if (foundLoanAccount) return res.status(200).json(foundLoanAccount);
     return res.status(404).json({ message: "Không thể tìm thấy khoản vay" });
+  } catch (err) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+module.exports.getAllLoanTypes = async (req, res, next) => {
+  try {
+    const foundLoanTypes = await LoanTypeDAO.getAllLoanTypes();
+    if (foundLoanTypes) return res.status(200).json(foundLoanTypes);
+    return res
+      .status(404)
+      .json({ message: "Không thể tìm thấy loại khoản vay" });
   } catch (err) {
     return res.status(500).json({ message: "Internal Server Error" });
   }
@@ -51,3 +66,88 @@ module.exports.getLoanAccount = async (req, res, next) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+module.exports.getAllLoanInterestRates = async (req, res, next) => {
+  try {
+    const interestRates =
+      await LoanTypeInterestRatesDAO.getAllLoanTypeInterestRates();
+    return res.status(200).json(interestRates);
+  } catch (err) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+module.exports.findLoanInterestRates = async (req, res, next) => {
+  const { loanType, loanTerm } = req.body;
+  console.log("findLoanInterestRates", req.body);
+  try {
+    const interestRates =
+      await LoanTypeInterestRatesDAO.getLoanTypeInterestRatesByloanTypeAndloanTerm(
+        loanType,
+        loanTerm
+      );
+    if (interestRates) return res.status(200).json(interestRates);
+    return res.status(404).json({ message: "Không thể tìm thấy lãi suất" });
+  } catch (err) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+module.exports.createLoanAccount = async (req, res, next) => {
+  const { customerId } = req.user;
+  const { loanType, loanTerm, loanAmount, findResult, destAccountNumber } =
+    req.body;
+
+  const annualInterestRate = findResult.annualInterestRate;
+
+  const totalInterest = annualInterestRate * parseInt(loanAmount);
+  const totalPayment = parseInt(loanAmount) + totalInterest;
+
+  try {
+    // Tính toán số tiền trả hàng tháng
+    const annualInterestRate = findResult.annualInterestRate; // %/năm, ví dụ: 8.5
+    const months = Number(loanTerm); // số tháng vay
+    const principal = Number(loanAmount);
+
+    // Tính số tiền trả hàng tháng
+    const monthlyPayment = calculateMonthlyPayment(
+      principal,
+      annualInterestRate,
+      months
+    );
+
+    // Tạo số tài khoản ngẫu nhiên
+    const accountLoanNumber = generateAccountNumber();
+
+    // Tạo instance mới
+    const newLoanAccount = new LoanAccount({
+      accountNumber: accountLoanNumber,
+      owner: customerId,
+      balance: totalPayment,
+      monthlyPayment: monthlyPayment,
+      status: "PENDING",
+      loanTypeInterest: findResult._id,
+    });
+
+    // Lưu vào database
+    const result = await LoanAccountDAO.createLoanAccount(newLoanAccount);
+    // console.log("tạo thành công", result);
+
+    return res.status(201).json(result);
+  } catch (err) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Hàm tính toán số tiền trả hàng tháng
+function calculateMonthlyPayment(principal, annualRate, months) {
+  const monthlyRate = annualRate / 12 / 100;
+  return Math.round(
+    (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months))
+  );
+}
+
+// Hàm sinh số tài khoản ngẫu nhiên 12 số
+function generateAccountNumber() {
+  return Math.floor(Math.random() * 900000000000 + 100000000000).toString();
+}

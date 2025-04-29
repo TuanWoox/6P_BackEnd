@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const Customer = require("../models/customer");
 const CustomerDAO = require("../DAO/CustomerDAO");
 const AuthDAO = require("../DAO/AuthDAO");
+const bcrypt = require("bcrypt");
 const { generateAccessToken, generateRefreshToken } = require("../utils/utils");
 module.exports.signUp = async (req, res, next) => {
   const newCustomer = new Customer({
@@ -76,7 +77,7 @@ module.exports.checkEmailAvailable = async (req, res, next) => {
       .status(500)
       .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
   }
-}
+};
 module.exports.identityVerification = async (req, res, next) => {
   const { fullName, nationalID, email } = req.body;
   if (!fullName || !nationalID || !email) {
@@ -97,7 +98,7 @@ module.exports.identityVerification = async (req, res, next) => {
   } catch (error) {
     return res.status(500).json({ message: "Lỗi máy chủ nội bộ" });
   }
-}
+};
 module.exports.login = async (req, res, next) => {
   const { email: antiByPassEmail } = req.antiByPass || {};
   const { email, password } = req.body;
@@ -109,7 +110,11 @@ module.exports.login = async (req, res, next) => {
 
   try {
     const foundCustomer = await AuthDAO.login(email, password);
-    if (foundCustomer) {
+    const isMatch = await bcrypt.compare(password, foundCustomer.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Sai tài khoản hoặc mật khẩu" });
+    }
+    if (isMatch) {
       const accessToken = generateAccessToken(foundCustomer);
       const refreshToken = generateRefreshToken(foundCustomer);
       await AuthDAO.storeRefreshToken(foundCustomer, refreshToken);
@@ -119,7 +124,6 @@ module.exports.login = async (req, res, next) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
-        maxAge: 15 * 60 * 1000, // 15 minutes
       });
 
       res.cookie("refreshToken", refreshToken, {
@@ -131,8 +135,6 @@ module.exports.login = async (req, res, next) => {
       res.clearCookie("OTPToken", { path: "/" }); // Ensure the path is correct
       return res.status(200).json({ message: "Login Successfully" });
     }
-
-    return res.status(400).json({ message: "Sai tài khoản hoặc mật khẩu" });
   } catch (e) {
     return res.status(500).json({ message: "Internal Server Errors" });
   }
@@ -171,7 +173,6 @@ module.exports.refreshToken = async (req, res, next) => {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: "strict",
-          maxAge: 15 * 60 * 1000,
         });
         return res.status(200).json({
           message: "Token refreshed successfully",
@@ -211,7 +212,7 @@ module.exports.validateJWT = async (req, res) => {
 
   jwt.verify(accessToken, process.env.JWT_SECRET_KEY, (err, user) => {
     if (err) {
-      return res.status(401).json({
+      return res.status(403).json({
         message: "Unauthorized - Invalid or expired token",
       });
     }

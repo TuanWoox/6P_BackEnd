@@ -8,6 +8,8 @@ const loanTypeSchema = new Schema(
     maxIncomeRequired: { type: Number, required: true },
     maxLimit: { type: Number, required: true },
     minLimit: { type: Number, required: true },
+    imageSrc: { type: String, required: true },
+    description: { type: String, required: true },
   },
   { timestamps: true }
 );

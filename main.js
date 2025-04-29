@@ -8,6 +8,7 @@ const otpRoute = require("./routes/otp");
 const customerRoute = require("./routes/customer");
 const transactionRoute = require("./routes/transaction");
 const checkingAccountRoute = require("./routes/checkingAccount");
+const savingAccountRoute = require("./routes/savingAccount");
 const loanAccountRoute = require("./routes/loanAccount");
 const cookieParser = require("cookie-parser");
 
@@ -31,6 +32,7 @@ app.use("/otp", otpRoute);
 app.use("/transaction", transactionRoute);
 app.use("/customer", customerRoute);
 app.use("/checkingAccount", checkingAccountRoute);
+app.use("/savingAccount", savingAccountRoute);
 app.use("/loanAccount", loanAccountRoute);
 
 app.listen(PORT, () =>
