@@ -24,7 +24,7 @@ module.exports.generateAccessToken = (foundCustomer) => {
     },
     process.env.JWT_SECRET_KEY,
     {
-      expiresIn: "15s",
+      expiresIn: "30s",
     }
   );
   return accessToken;
