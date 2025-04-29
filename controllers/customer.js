@@ -94,3 +94,47 @@ module.exports.changePassword = async (req, res, next) => {
       .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
   }
 };
+
+module.exports.getCustomerProfile = async (req, res, next) => {
+  const { customerId } = req.user;
+  try {
+    const customerProfile = await CustomerDAO.getCustomerProfile(customerId);
+    const checkingAccount = await CheckingAccountDAO.getCheckingAccount(
+      customerId
+    );
+    if (customerProfile && checkingAccount) {
+      return res.status(200).json({ customerProfile, checkingAccount });
+    }
+    return res
+      .status(404)
+      .json({ message: "Cannot find by the customer profile" });
+  } catch (e) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+module.exports.updateCustomerProfile = async (req, res, next) => {
+  const { customerId } = req.user;
+  const { fullName, email, phoneNumber, dateOfBirth, address } = req.body.customer;
+  if (!fullName || !email || !phoneNumber || !dateOfBirth || !address) {
+    return res.status(400).json({ message: "Thiếu thông tin cần thiết" });
+  }
+  try {
+    const customerProfile = await CustomerDAO.getCustomerProfile(customerId);
+    if (!customerProfile) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+    const updatedData = { fullName, email, phoneNumber, dateOfBirth, address };
+    const isUpdated = await CustomerDAO.updateCustomerProfile(customerId, updatedData);
+
+    if (isUpdated) {
+      return res.status(200).json({ message: "Thông tin đã được cập nhật thành công" });
+    } else {
+      return res.status(400).json({ message: "Không thể cập nhật thông tin" });
+    }
+  } catch (e) {
+    console.log("after catch");
+    return res.status(500).json({ message: "Lỗi máy chủ nội bộ" });
+  }
+};
+
