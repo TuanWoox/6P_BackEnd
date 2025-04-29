@@ -30,4 +30,17 @@ router
   .route("/changePassword")
   .post(authMiddleware.authenticateToken, customerController.changePassword);
 
+router
+  .route("/getPersonalInfor")
+  .get(
+    authMiddleware.authenticateToken,
+    customerController.getCustomerProfile
+  );
+
+router
+  .route("/updatePersonalInfor") 
+  .post(
+    authMiddleware.authenticateToken,
+    customerController.updateCustomerProfile
+  );
 module.exports = router;

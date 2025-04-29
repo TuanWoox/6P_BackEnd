@@ -84,5 +84,18 @@ class CustomerDAO {
       throw err;
     }
   }
+  async updateCustomerProfile(customerId, updatedData) {
+    try {
+      const customer = await this.getCustomerProfile(customerId);
+      if (!customer) {
+        return null;
+      }
+      Object.assign(customer, updatedData);
+      await customer.save();
+      return true;
+    } catch (err) {
+      throw err;
+    }
+  }
 }
 module.exports = new CustomerDAO();
