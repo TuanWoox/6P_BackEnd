@@ -12,29 +12,23 @@ class AuthDAO {
       throw err;
     }
   }
-  async identityVerification(fullName, nationalID, email){
+  async identityVerification(fullName, nationalID, email) {
     try {
       const foundUser = await Customer.findOne({ fullName, nationalID, email });
       if (foundUser) {
         return foundUser;
       } else {
         return null; // User not found
-      } 
+      }
     } catch (err) {
       throw err; // Re-throw the error for handling upstream
     }
-    
   }
   async login(email, password) {
     try {
       const foundCustomer = await Customer.findOne({ email });
       if (!foundCustomer) {
         return null; // Customer not found
-      }
-
-      const isMatch = await bcrypt.compare(password, foundCustomer.password);
-      if (!isMatch) {
-        return null; // Password does not match
       }
 
       return foundCustomer; // Login successful
