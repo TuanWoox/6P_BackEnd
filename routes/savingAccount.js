@@ -17,4 +17,13 @@ router
     savingAccountController.getSavingAccountById
   );
 
+router.route("/getAllSavingTypes").get(savingAccountController.getAllLoanTypes);
+router
+  .route("/getAllSavingInterestRates")
+  .get(savingAccountController.getAllSavingInterestRates);
+
+router
+  .route("/getAllSavingDepositTypes")
+  .get(savingAccountController.getAllSavingDepositTypes);
+
 module.exports = router;
