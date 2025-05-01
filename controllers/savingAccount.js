@@ -7,6 +7,9 @@ const CheckingAccountDAO = require("../DAO/CheckingAccountDAO");
 const Transaction = require("../models/Transaction");
 const TransactionDAO = require("../DAO/TransactionDAO");
 const { generateUniqueAccountNumber } = require("../utils/utils");
+const { differenceInDays } = require("date-fns");
+const mongoose = require("mongoose");
+
 
 module.exports.getSavingAccounts = async (req, res, next) => {
   const { customerId } = req.user;
@@ -155,5 +158,101 @@ module.exports.createSavingAccount = async (req, res, next) => {
   } catch (err) {
     console.error("Error creating saving account:", err);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+module.exports.withdrawSaving = async (req, res) => {
+  const customerId = "680de05268dff8e8645e93e7"; // Tạm hard-code cho test
+  try {
+    const { accountId } = req.params;
+
+    const saving = await SavingAccountDAO.getSavingAccountById(accountId);
+    if (!saving || saving.status !== "ACTIVE") {
+      return res.status(404).json({ message: "Sổ tiết kiệm không tồn tại hoặc đã tất toán." });
+    }
+
+    const checkingAccount = await CheckingAccountDAO.getCheckingAccount(customerId);
+    if (!checkingAccount) {
+      return res.status(404).json({ message: "Tài khoản thanh toán không tồn tại." });
+    }
+
+    const principalAmount = saving.balance;
+    const dateOpened = saving.dateOpened;
+    const savingInterest = saving.savingTypeInterest || {};
+
+    const dailyInterestRate = savingInterest.dailyInterestRate ?? 0;
+    const monthlyInterestRate = savingInterest.monthlyInterestRate ?? 0;
+    const maturityPeriod = savingInterest.maturityPeriod ?? 0;
+    const percentMoneyLose0 = savingInterest.percentMoneyLose0 ?? 0;
+
+    console.log("Saving", saving);
+
+    console.log("Monthly Interest Rate:", monthlyInterestRate);
+    console.log("Daily Interest Rate:", dailyInterestRate);
+
+    const today = new Date();
+    const openedDate = new Date(dateOpened);
+    const daysDeposited = differenceInDays(today, openedDate);
+
+    const maturityDate = new Date(openedDate);
+    maturityDate.setMonth(maturityDate.getMonth() + maturityPeriod);
+    const isEarlyWithdrawal = maturityPeriod > 0 && today < maturityDate;
+
+    let interestEarned = 0;
+    if (maturityPeriod === 0) {
+      // Không kỳ hạn → dùng dailyInterestRate
+      interestEarned = principalAmount * (dailyInterestRate / 100) * daysDeposited;
+    } else {
+      // Có kỳ hạn → dùng monthlyInterestRate
+      interestEarned = principalAmount * (monthlyInterestRate / 100) * maturityPeriod;
+    }
+
+    let totalAmount = principalAmount + interestEarned;
+    let penaltyAmount = 0;
+
+    // Nếu tất toán trước hạn, tính phí phạt
+    if (isEarlyWithdrawal) {
+      penaltyAmount = totalAmount * (percentMoneyLose0 / 100);
+      totalAmount -= penaltyAmount;
+    }
+
+    console.log("Total Amount:", totalAmount);
+
+    // ➤ CHUẨN BỊ dữ liệu, chưa save
+    checkingAccount.balance += totalAmount;
+    saving.status = "CLOSED";
+    saving.updatedAt = today;
+
+    const transaction = new Transaction({
+      type: "WITHDRAWAL",
+      amount: totalAmount,
+      description: isEarlyWithdrawal ? "Tất toán trước hạn" : "Tất toán đúng hạn",
+      sourceAccountID: saving.accountNumber,
+      destinationAccountID: checkingAccount.accountNumber,
+      status: "Completed",
+    });
+
+    // Validate thủ công trước khi save bất kỳ cái gì
+    await transaction.validate();
+
+    // Nếu không lỗi, mới tiếp tục lưu cả 3
+    await Promise.all([
+      checkingAccount.save(),
+      saving.save(),
+      transaction.save()
+    ]);
+
+    return res.status(200).json({
+      message: "Tất toán thành công",
+      totalReceived: totalAmount,
+      principalAmount,
+      interestEarned,
+      penaltyAmount,
+      isEarlyWithdrawal
+    });
+
+  } catch (error) {
+    console.error("Withdraw Error:", error);
+    return res.status(500).json({ message: "Lỗi hệ thống khi tất toán." });
   }
 };

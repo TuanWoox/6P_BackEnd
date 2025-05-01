@@ -33,4 +33,11 @@ router
     savingAccountController.createSavingAccount
   );
 
+router
+  .route("/withdrawSaving/:accountId")
+  .get(
+    // authMiddleware.authenticateToken,
+    savingAccountController.withdrawSaving
+  );
+
 module.exports = router;
