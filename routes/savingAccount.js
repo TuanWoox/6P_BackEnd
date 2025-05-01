@@ -26,4 +26,11 @@ router
   .route("/getAllSavingDepositTypes")
   .get(savingAccountController.getAllSavingDepositTypes);
 
+router
+  .route("/createSavingAccount")
+  .post(
+    authMiddleware.authenticateToken,
+    savingAccountController.createSavingAccount
+  );
+
 module.exports = router;

@@ -1,12 +1,12 @@
 const savingType = require("../models/savingType");
 const SavingTypeInterest = require("../models/savingTypeInterest");
 const SavingAccount = require("../models/savingAccount");
-
+const { generateUniqueAccountNumber } = require("../utils/utils");
 
 class SavingAccountDAO {
-  async createSavingAccount(newSavingAccount) {
+  async createSavingAccount(savingAccountInstace) {
     try {
-      await newSavingAccount.save();
+      await savingAccountInstace.save();
     } catch (error) {
       throw error;
     }
@@ -14,13 +14,12 @@ class SavingAccountDAO {
 
   async getSavingAccountById(accountId) {
     try {
-      const foundAccount = await SavingAccount.findById(accountId)
-      .populate([
-        { path: 'owner' },
-        { 
-          path: 'savingTypeInterest',
-          populate: { path: 'savingType' }
-        }
+      const foundAccount = await SavingAccount.findById(accountId).populate([
+        { path: "owner" },
+        {
+          path: "savingTypeInterest",
+          populate: { path: "savingType" },
+        },
       ]);
       if (!foundAccount) {
         return null;
@@ -30,17 +29,18 @@ class SavingAccountDAO {
       throw err;
     }
   }
-  
+
   async getAllSavingAccounts(customerId) {
     try {
-      const accounts = await SavingAccount.find({ owner: customerId })
-      .populate([
-        { path: 'owner' },
-        { 
-          path: 'savingTypeInterest',
-          populate: { path: 'savingType' }
-        }
-      ]);
+      const accounts = await SavingAccount.find({ owner: customerId }).populate(
+        [
+          { path: "owner" },
+          {
+            path: "savingTypeInterest",
+            populate: { path: "savingType" },
+          },
+        ]
+      );
       return accounts;
     } catch (err) {
       console.log(err);
