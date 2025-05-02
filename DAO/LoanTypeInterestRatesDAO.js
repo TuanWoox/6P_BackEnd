@@ -4,7 +4,9 @@ class LoanTypeInterestRatesDAO {
   async getAllLoanTypeInterestRates() {
     try {
       // Lấy tất cả các document trong collection LoanTypeInterestRates
-      const interestRates = await LoanTypeInterestRates.find();
+      const interestRates = await LoanTypeInterestRates.find().populate(
+        "loanType"
+      );
       return interestRates;
     } catch (err) {
       throw err;
@@ -18,7 +20,6 @@ class LoanTypeInterestRatesDAO {
         loanType: loanType,
         termMonths: Number(loanTerm),
       });
-      console.log(interestRate);
       return interestRate;
     } catch (err) {
       throw err;

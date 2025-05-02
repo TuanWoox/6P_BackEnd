@@ -79,7 +79,6 @@ module.exports.getAllLoanInterestRates = async (req, res, next) => {
 
 module.exports.findLoanInterestRates = async (req, res, next) => {
   const { loanType, loanTerm } = req.body;
-  console.log("findLoanInterestRates", req.body);
   try {
     const interestRates =
       await LoanTypeInterestRatesDAO.getLoanTypeInterestRatesByloanTypeAndloanTerm(
@@ -95,18 +94,24 @@ module.exports.findLoanInterestRates = async (req, res, next) => {
 
 module.exports.createLoanAccount = async (req, res, next) => {
   const { customerId } = req.user;
-  const { loanType, loanTerm, loanAmount, findResult, destAccountNumber } =
-    req.body;
+  const {
+    loanType,
+    loanTerm,
+    loanAmount,
+    selectedLoanInterestRate,
+    destAccountNumber,
+  } = req.body;
 
-  const annualInterestRate = findResult.annualInterestRate;
+  // console.log(req.body);
 
-  const totalInterest = annualInterestRate * parseInt(loanAmount);
+  const totalInterest =
+    selectedLoanInterestRate.annualInterestRate * parseInt(loanAmount);
   const totalPayment = parseInt(loanAmount) + totalInterest;
 
   try {
     // Tính toán số tiền trả hàng tháng
-    const annualInterestRate = findResult.annualInterestRate; // %/năm, ví dụ: 8.5
-    const months = Number(loanTerm); // số tháng vay
+    const annualInterestRate = selectedLoanInterestRate.annualInterestRate;
+    const months = Number(selectedLoanInterestRate.termMonths); // số tháng vay
     const principal = Number(loanAmount);
 
     // Tính số tiền trả hàng tháng
@@ -126,16 +131,28 @@ module.exports.createLoanAccount = async (req, res, next) => {
       balance: totalPayment,
       monthlyPayment: monthlyPayment,
       status: "PENDING",
-      loanTypeInterest: findResult._id,
+      loanTypeInterest: selectedLoanInterestRate._id,
     });
 
-    // Lưu vào database
-    const result = await LoanAccountDAO.createLoanAccount(newLoanAccount);
-    // console.log("tạo thành công", result);
+    // console.log("newLoanAccount", newLoanAccount);
 
-    return res.status(201).json(result);
+    // Lưu vào database
+    const savedLoanAccount = await LoanAccountDAO.createLoanAccount(
+      newLoanAccount
+    );
+    console.log("tạo thành công", savedLoanAccount);
+
+    // Truy vấn lại để populate đầy đủ
+    const populatedLoanAccount = await LoanAccountDAO.getLoanAccountById(
+      savedLoanAccount._id
+    );
+
+    return res.status(201).json(populatedLoanAccount);
   } catch (err) {
-    return res.status(500).json({ message: "Internal Server Error" });
+    console.error("Error creating loan account:", err);
+    return res
+      .status(500)
+      .json({ message: "Internal Server Controller Error: " + err });
   }
 };
 
