@@ -17,7 +17,9 @@ router
     savingAccountController.getSavingAccountById
   );
 
-router.route("/getAllSavingTypes").get(savingAccountController.getAllLoanTypes);
+router
+  .route("/getAllSavingTypes")
+  .get(savingAccountController.getAllSavingTypes);
 router
   .route("/getAllSavingInterestRates")
   .get(savingAccountController.getAllSavingInterestRates);
@@ -33,11 +35,9 @@ router
     savingAccountController.createSavingAccount
   );
 
-router
-  .route("/withdrawSaving/:accountId")
-  .get(
-    // authMiddleware.authenticateToken,
-    savingAccountController.withdrawSaving
-  );
+router.route("/withdrawSaving/:accountId").get(
+  // authMiddleware.authenticateToken,
+  savingAccountController.withdrawSaving
+);
 
 module.exports = router;

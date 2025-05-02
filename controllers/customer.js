@@ -1,67 +1,47 @@
-const CustomerDAO = require("../DAO/CustomerDAO");
-const CheckingAccountDAO = require("../DAO/CheckingAccountDAO");
-const bcrypt = require("bcrypt");
+const CustomerService = require("../services/customerService");
+
 module.exports.getInformationForSideBar = async (req, res, next) => {
   const { customerId } = req.user;
-  // console.log(customerId);
   try {
-    const fullName = await CustomerDAO.getCustomerName(customerId);
-    const checkingAccount = await CheckingAccountDAO.getCheckingAccount(
-      customerId
-    );
-    if (fullName) return res.status(200).json({ fullName, checkingAccount });
-    return res
-      .status(404)
-      .json({ message: "Cannot find by the customer name" });
+    const { fullName, checkingAccount } =
+      await CustomerService.getInformationForSideBar(customerId);
+    return res.status(200).json({ fullName, checkingAccount });
   } catch (e) {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 module.exports.getCustomerID = async (req, res, next) => {
   const { email, nationalID } = req.body;
   if (!email || !nationalID) {
     return res.status(400).json({ message: "Thiếu thông tin cần thiết" });
   }
   try {
-    const customerId = await CustomerDAO.getCustomerIdByEmailandNationalID(
-      email,
-      nationalID
-    );
-    if (!customerId) {
-      return res.status(404).json({ message: "Không tìm thấy người dùng" });
-    }
+    const customerId = await CustomerService.getCustomerID(email, nationalID);
     return res.status(200).json({ customerId });
   } catch (e) {
     return res.status(500).json({ message: "Lỗi máy chủ nội bộ" });
   }
-}
+};
+
 module.exports.resetPassword = async (req, res, next) => {
-  const {customerId, newPassword} = req.body;
+  const { customerId, newPassword } = req.body;
   if (!customerId || !newPassword) {
     return res.status(400).json({ message: "Thiếu thông tin cần thiết" });
   }
   try {
-    const customer = await CustomerDAO.getCustomerProfile(customerId);
-    if (!customer) {
-      return res.status(404).json({ message: "Không tìm thấy người dùng" });
-    }
-    await CustomerDAO.resetPassword(customer, newPassword);
+    await CustomerService.resetPassword(customerId, newPassword);
     return res.status(200).json({ message: "Đặt lại mật khẩu thành công" });
-  } catch(e) {
+  } catch (e) {
     return res.status(500).json({ message: "Lỗi máy chủ nội bộ" });
   }
-}
+};
 
 module.exports.getEmail = async (req, res, next) => {
   const { customerId } = req.user;
   try {
-    const email = await CustomerDAO.getCustomerEmail(customerId);
-    if (email) {
-      return res.status(200).json({ email });
-    }
-    return res
-      .status(404)
-      .json({ message: "Cannot find by the customer email" });
+    const email = await CustomerService.getEmail(customerId);
+    return res.status(200).json({ email });
   } catch (e) {
     return res.status(500).json({ message: "Internal Server Error" });
   }
@@ -76,19 +56,9 @@ module.exports.changePassword = async (req, res, next) => {
   }
 
   try {
-    const result = await CustomerDAO.changePassword(
-      customerId,
-      oldPassword,
-      newPassword
-    );
-
-    if (result.success) {
-      return res.status(200).json({ message: "Thay đổi mật khẩu thành công" });
-    } else {
-      return res.status(401).json({ message: result.error });
-    }
+    await CustomerService.changePassword(customerId, oldPassword, newPassword);
+    return res.status(200).json({ message: "Thay đổi mật khẩu thành công" });
   } catch (e) {
-    console.error("Error changing password:", e);
     return res
       .status(500)
       .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
@@ -98,43 +68,28 @@ module.exports.changePassword = async (req, res, next) => {
 module.exports.getCustomerProfile = async (req, res, next) => {
   const { customerId } = req.user;
   try {
-    const customerProfile = await CustomerDAO.getCustomerProfile(customerId);
-    const checkingAccount = await CheckingAccountDAO.getCheckingAccount(
-      customerId
-    );
-    if (customerProfile && checkingAccount) {
-      return res.status(200).json({ customerProfile, checkingAccount });
-    }
-    return res
-      .status(404)
-      .json({ message: "Cannot find by the customer profile" });
+    const { customerProfile, checkingAccount } =
+      await CustomerService.getCustomerProfile(customerId);
+    return res.status(200).json({ customerProfile, checkingAccount });
   } catch (e) {
     return res.status(500).json({ message: "Internal Server Error" });
   }
-}
+};
 
 module.exports.updateCustomerProfile = async (req, res, next) => {
   const { customerId } = req.user;
-  const { fullName, email, phoneNumber, dateOfBirth, address } = req.body.customer;
+  const { fullName, email, phoneNumber, dateOfBirth, address } =
+    req.body.customer;
   if (!fullName || !email || !phoneNumber || !dateOfBirth || !address) {
     return res.status(400).json({ message: "Thiếu thông tin cần thiết" });
   }
   try {
-    const customerProfile = await CustomerDAO.getCustomerProfile(customerId);
-    if (!customerProfile) {
-      return res.status(404).json({ message: "Không tìm thấy người dùng" });
-    }
     const updatedData = { fullName, email, phoneNumber, dateOfBirth, address };
-    const isUpdated = await CustomerDAO.updateCustomerProfile(customerId, updatedData);
-
-    if (isUpdated) {
-      return res.status(200).json({ message: "Thông tin đã được cập nhật thành công" });
-    } else {
-      return res.status(400).json({ message: "Không thể cập nhật thông tin" });
-    }
+    await CustomerService.updateCustomerProfile(customerId, updatedData);
+    return res
+      .status(200)
+      .json({ message: "Thông tin đã được cập nhật thành công" });
   } catch (e) {
-    console.log("after catch");
     return res.status(500).json({ message: "Lỗi máy chủ nội bộ" });
   }
 };
-
