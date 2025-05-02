@@ -4,8 +4,8 @@ const ETransactionType = [
   "DEPOSIT",
   "WITHDRAWAL",
   "TRANSFER",
-  "REFUND",
-  "RECEIVED",
+  "PAYLOAN",
+  "RECEIVELOAN",
 ];
 
 const ETransactionStatus = ["Pending", "Completed", "Failed", "REJECTED"];

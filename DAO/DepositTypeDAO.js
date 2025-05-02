@@ -11,7 +11,9 @@ class DepositTypeDAO {
 
   async getDepositTypeById(depositTypeId) {
     try {
-      const foundDepositType = await DepositType.findById(depositTypeId).populate('savingType');
+      const foundDepositType = await DepositType.findById(
+        depositTypeId
+      ).populate("savingType");
       if (!foundDepositType) {
         return null;
       }
@@ -23,7 +25,7 @@ class DepositTypeDAO {
 
   async getAllDepositTypes() {
     try {
-      const depositTypes = await DepositType.find().populate('savingType');
+      const depositTypes = await DepositType.find();
       return depositTypes;
     } catch (err) {
       throw err;
