@@ -20,13 +20,15 @@ const savingAccountSchema = new Schema(
     finishEarningDate: {
       type: Date,
     },
-    totalEarning: {
-      type: Number,
-      default: 0,
-    },
+    // totalEarning: {
+    //   type: Number,
+    //   default: 0,
+    // },
     status: {
       type: String,
-      enum: ["ACTIVE", "MATURED", "CLOSED"],
+      enum: ["ACTIVE", 
+        // "MATURED", 
+        "CLOSED"],
       default: "ACTIVE",
     },
   },
