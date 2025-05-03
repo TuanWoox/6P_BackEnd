@@ -32,15 +32,16 @@ class SavingAccountDAO {
 
   async getAllSavingAccounts(customerId) {
     try {
-      const accounts = await SavingAccount.find({ owner: customerId, status: "ACTIVE" }).populate(
-        [
-          { path: "owner" },
-          {
-            path: "savingTypeInterest",
-            populate: { path: "savingType" },
-          },
-        ]
-      );
+      const accounts = await SavingAccount.find({
+        owner: customerId,
+        status: "ACTIVE",
+      }).populate([
+        { path: "owner" },
+        {
+          path: "savingTypeInterest",
+          populate: { path: "savingType" },
+        },
+      ]);
       return accounts;
     } catch (err) {
       console.log(err);
