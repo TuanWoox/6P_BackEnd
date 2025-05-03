@@ -16,29 +16,52 @@ class CheckingAccountService {
   }
 
   static async transferMoney(userId, { targetAccount, amount, description }) {
-    const currentAccount = await CheckingAccountDAO.getCheckingAccount(userId);
-    if (!currentAccount || currentAccount.status !== "ACTIVE") {
-      throw new Error("Invalid or inactive source account");
+    try {
+      // Get source account
+      const currentAccount = await CheckingAccountDAO.getCheckingAccount(
+        userId
+      );
+      if (!currentAccount || currentAccount.status !== "ACTIVE") {
+        throw new Error("Invalid or inactive source account");
+      }
+
+      // Get destination account
+      const destAccount = await CheckingAccountDAO.getByAccountNumber(
+        targetAccount
+      );
+      if (!destAccount || destAccount.status !== "ACTIVE") {
+        throw new Error("Invalid or inactive destination account");
+      }
+
+      // Check balance
+      if (!currentAccount.hasSufficientBalance(amount)) {
+        throw new Error("Insufficient funds");
+      }
+
+      // Perform transfer
+      currentAccount.transferMoney(destAccount, amount);
+
+      // Create transaction record
+      const newTransaction = new Transaction({
+        type: "TRANSFER",
+        amount,
+        description,
+        sourceAccountID: currentAccount.accountNumber,
+        destinationAccountID: destAccount.accountNumber,
+        status: "Completed",
+      });
+
+      // Save updates
+      await Promise.all([
+        CheckingAccountDAO.save(currentAccount),
+        CheckingAccountDAO.save(destAccount),
+      ]);
+
+      // Persist transaction
+      return await transactionDAO.createTransfer(newTransaction);
+    } catch (err) {
+      throw new Error(err.message || "Internal server error");
     }
-
-    const destAccount = await CheckingAccountDAO.getByAccountNumber(
-      targetAccount
-    );
-    currentAccount.transferMoney(destAccount, amount);
-    const newTransaction = new Transaction({
-      type: "TRANSFER",
-      amount,
-      description,
-      sourceAccountID: currentAccount.accountNumber,
-      destinationAccountID: targetAccount,
-      status: "Completed",
-    });
-    await Promise.all([
-      CheckingAccountDAO.save(currentAccount),
-      CheckingAccountDAO.save(destAccount),
-    ]);
-
-    return await transactionDAO.createTransfer(newTransaction);
   }
 }
 

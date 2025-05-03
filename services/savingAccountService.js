@@ -58,7 +58,7 @@ class SavingAccountController {
         await SavingTypeInterestDAO.getAllSavingTypeInterest();
       return savingInterestRates;
     } catch (err) {
-      throw (err);
+      throw err;
     }
   }
 
@@ -69,23 +69,20 @@ class SavingAccountController {
     accountNumber
   ) {
     try {
+      // Validate checking account ownership
       const checkingAccount = await CheckingAccountDAO.getByAccountNumber(
         accountNumber
       );
-
       if (!checkingAccount || checkingAccount.owner.toString() !== customerId) {
         throw new Error("Unauthorized or invalid account");
       }
 
-      const availableBalance =
-        checkingAccount.balance +
-        (checkingAccount.overdraftProtection
-          ? checkingAccount.dailyTransactionLimit
-          : 0);
-      if (availableBalance < balance) {
+      // Check for sufficient balance
+      if (!checkingAccount.hasSufficientBalance(balance)) {
         throw new Error("Insufficient funds");
       }
 
+      // Retrieve and validate saving type
       const savingType = await SavingTypeInterestDAO.getSavingTypeInterestById(
         savingTypeInterestId
       );
@@ -93,34 +90,34 @@ class SavingAccountController {
         throw new Error("Saving type not found");
       }
 
+      // Determine interest dates
       const now = new Date();
-      let nextEarningDate;
+      let nextEarningDate = new Date(now);
       let finishEarningDate = null;
 
       if (savingType.maturityPeriod === 0) {
-        nextEarningDate = new Date(now);
         nextEarningDate.setDate(now.getDate() + 1);
       } else {
-        nextEarningDate = new Date(now);
         nextEarningDate.setMonth(now.getMonth() + 1);
-
         finishEarningDate = new Date(now);
         finishEarningDate.setMonth(now.getMonth() + savingType.maturityPeriod);
       }
 
-      const number = await generateUniqueAccountNumber();
-
+      // Create saving account
+      const newAccountNumber = await generateUniqueAccountNumber();
       const newSavingAccount = new SavingAccount({
-        accountNumber: number,
+        accountNumber: newAccountNumber,
         owner: customerId,
-        balance,
+        balance: 0,
         savingTypeInterest: savingTypeInterestId,
         nextEarningDate,
         finishEarningDate,
       });
 
-      checkingAccount.balance -= balance;
+      // Perform deposit
+      checkingAccount.depositSavingAccount(newSavingAccount, balance);
 
+      // Create transaction record
       const transaction = new Transaction({
         type: "DEPOSIT",
         amount: balance,
@@ -130,6 +127,7 @@ class SavingAccountController {
         status: "Completed",
       });
 
+      // Persist changes
       await Promise.all([
         SavingAccountDAO.createSavingAccount(newSavingAccount),
         CheckingAccountDAO.save(checkingAccount),

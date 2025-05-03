@@ -20,16 +20,16 @@ checkingAccountSchema.methods.hasSufficientBalance = function (amount) {
   return available >= amount;
 };
 checkingAccountSchema.methods.transferMoney = function (destAccount, amount) {
-  if (!destAccount || destAccount.status !== "ACTIVE") {
-    throw new Error("Invalid or inactive destination account");
-  }
-
-  if (!this.hasSufficientBalance(amount)) {
-    throw new Error("Insufficient funds");
-  }
-
   this.balance -= amount;
   destAccount.balance += amount;
+};
+
+checkingAccountSchema.methods.depositSavingAccount = function (
+  savingAccount,
+  amount
+) {
+  this.balance -= amount;
+  savingAccount.balance += amount;
 };
 
 const CheckingAccount = Account.discriminator(
