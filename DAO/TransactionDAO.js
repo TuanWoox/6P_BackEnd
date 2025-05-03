@@ -32,5 +32,30 @@ class TransactionDAO {
       throw error;
     }
   }
+  async sumTodayTransfers(accountNumber) {
+    // Build start-of-day timestamp in server’s timezone
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const result = await Transaction.aggregate([
+      {
+        $match: {
+          sourceAccountID: accountNumber,
+          type: "TRANSFER",
+          status: "Completed",
+          createdAt: { $gte: startOfDay },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    // If there were no matches, return 0
+    return result.length > 0 ? result[0].total : 0;
+  }
 }
 module.exports = new TransactionDAO();

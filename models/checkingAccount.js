@@ -4,7 +4,7 @@ const Account = require("./account");
 
 const checkingAccountSchema = new Schema(
   {
-    dailyTransactionLimit: { type: Number, required: true, default: 10000000 },
+    dailyTransactionLimit: { type: Number, required: true, default: 100000000 },
     overdraftProtection: { type: Boolean, default: false },
     status: {
       type: String,

@@ -47,3 +47,28 @@ module.exports.transferMoney = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+module.exports.getLimitTransaction = async (req, res) => {
+  try {
+    const result = await CheckingAccountService.getLimitTransaction(
+      req.user.customerId
+    );
+    if (result) return res.status(200).json(result);
+    return res.status(404).json({ message: "Không thể tìm thấy tài khoản" });
+  } catch (err) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+module.exports.updateLimit = async (req, res) => {
+  try {
+    const result = await CheckingAccountService.updateLimit(
+      req.user.customerId,
+      req.body
+    );
+    if (result) return res.status(200).json(result);
+    return res.status(404).json({ message: "Không thể tìm thấy tài khoản" });
+  } catch (err) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};

@@ -15,8 +15,8 @@ class TransactionService {
       const history = await TransactionDAO.getHistoryByUserId(userId);
 
       // Defining transaction types
-      const IN_TYPES = ["DEPOSIT", "RECEIVED", "REFUND"];
-      const OUT_TYPES = ["WITHDRAWAL"];
+      const IN_TYPES = ["WITHDRAWAL", "RECEIVELOAN"];
+      const OUT_TYPES = ["DEPOSIT", "PAYLOAN"];
 
       // Mapping and adding 'direction' to transactions
       const formattedHistory = history.map((txDoc) => {

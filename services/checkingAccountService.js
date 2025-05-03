@@ -15,6 +15,28 @@ class CheckingAccountService {
     return await CheckingAccountDAO.checkAvilableTargetAccount(accountNumber);
   }
 
+  static async getLimitTransaction(customerId) {
+    const checkingAccount = await CheckingAccountDAO.getCheckingAccount(
+      customerId
+    );
+    if (!checkingAccount) {
+      throw new Error("Checking account not found");
+    }
+    return checkingAccount.dailyTransactionLimit;
+  }
+
+  static async updateLimit(customerId, { newLimit }) {
+    const checkingAccount = await CheckingAccountDAO.getCheckingAccount(
+      customerId
+    );
+    if (!checkingAccount) {
+      throw new Error("Checking account not found");
+    }
+
+    checkingAccount.dailyTransactionLimit = newLimit;
+    return await CheckingAccountDAO.save(checkingAccount);
+  }
+
   static async transferMoney(userId, { targetAccount, amount, description }) {
     try {
       // Get source account
