@@ -222,7 +222,6 @@ async function sendMail(to, type, data) {
       </html>
       `;
       break;
-
     case "resetPassword":
       subject = "Đặt lại mật khẩu - 6P Bank";
       html = `
