@@ -32,6 +32,7 @@ module.exports.getAllSavingInterestRates = async (req, res) => {
       await SavingAccountService.getAllSavingInterestRates();
     return res.status(200).json(savingInterestRates);
   } catch (err) {
+    console.log(err);
     return res.status(500).json({ message: err.message });
   }
 };
@@ -77,6 +78,7 @@ module.exports.createSavingAccount = async (req, res) => {
 module.exports.withdrawSaving = async (req, res) => {
   const { accountId } = req.params;
   const { customerId } = req.user;
+
   try {
     const result = await SavingAccountService.withdrawSaving(
       customerId,
@@ -87,6 +89,7 @@ module.exports.withdrawSaving = async (req, res) => {
       ...result,
     });
   } catch (err) {
+    console.log(err);
     return res.status(500).json({ message: err.message });
   }
 };

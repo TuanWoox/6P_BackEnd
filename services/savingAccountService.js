@@ -6,6 +6,8 @@ const Transaction = require("../models/Transaction");
 const { generateUniqueAccountNumber } = require("../utils/utils");
 const { differenceInDays } = require("date-fns");
 const SavingAccount = require("../models/savingAccount");
+const DepositTypeDAO = require("../DAO/DepositTypeDAO");
+const SavingTypeDAO = require("../DAO/SavingTypeDAO");
 
 class SavingAccountController {
   static async getSavingAccounts(customerId) {
@@ -36,7 +38,7 @@ class SavingAccountController {
 
   static async getAllSavingTypes() {
     try {
-      return await SavingTypeInterestDAO.getAllSavingTypeInterest();
+      return await SavingTypeDAO.getAllSavingTypes();
     } catch (err) {
       throw new Error("Internal Server Error");
     }
@@ -44,18 +46,19 @@ class SavingAccountController {
 
   static async getAllSavingDepositTypes() {
     try {
-      return await SavingTypeInterestDAO.getAllDepositTypes();
+      return await DepositTypeDAO.getAllDepositTypes();
     } catch (err) {
+      console.log(err);
       throw new Error("Internal Server Error");
     }
   }
-  static async getAllSavingInterestRates(req, res) {
+  static async getAllSavingInterestRates() {
     try {
       const savingInterestRates =
         await SavingTypeInterestDAO.getAllSavingTypeInterest();
-      res.status(200).json(savingInterestRates);
+      return savingInterestRates;
     } catch (err) {
-      res.status(500).json({ message: "Internal Server Error" });
+      throw (err);
     }
   }
 
@@ -184,7 +187,7 @@ class SavingAccountController {
       let penaltyAmount = 0;
 
       if (isEarlyWithdrawal) {
-        penaltyAmount = totalAmount * (percentMoneyLose0 / 100);
+        penaltyAmount = interestEarned;
         totalAmount -= penaltyAmount;
       }
 
