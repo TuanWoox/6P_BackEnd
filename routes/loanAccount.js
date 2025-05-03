@@ -31,4 +31,18 @@ router
     loanAccountController.createLoanAccount
   );
 
+router
+  .route("/loanPayment/confirm")
+  .post(
+    authMiddleware.authenticateToken,
+    loanAccountController.confirmLoanPayment
+  );
+
+router
+  .route("/loanPayment/update")
+  .post(
+    authMiddleware.authenticateToken,
+    loanAccountController.updateAllLoanPayments
+  );
+
 module.exports = router;

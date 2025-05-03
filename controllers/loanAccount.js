@@ -4,6 +4,8 @@ const LoanPaymentDAO = require("../DAO/LoanPaymentDAO");
 const LoanTypeDAO = require("../DAO/LoanTypeDAO");
 const LoanTypeInterestRatesDAO = require("../DAO/LoanTypeInterestRatesDAO");
 const LoanAccount = require("../models/loanAccount");
+const Transaction = require("../models/Transaction");
+const transactionDAO = require("../DAO/TransactionDAO");
 // const LoanAccount = require("../models/LoanAccount");
 
 module.exports.getAllLoanAccounts = async (req, res, next) => {
@@ -134,6 +136,113 @@ module.exports.createLoanAccount = async (req, res, next) => {
     // console.log("tạo thành công", result);
 
     return res.status(201).json(result);
+  } catch (err) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+module.exports.confirmLoanPayment = async (req, res, next) => {
+  const { sourceAccount, targetPayment, amount } = req.body;
+  const { customerId } = req.user;
+
+  try {
+    // 1. Kiểm tra tài khoản nguồn
+    const sourceAccountData = await CheckingAccountDAO.getByAccountNumber(
+      sourceAccount
+    );
+    if (
+      !sourceAccountData ||
+      sourceAccountData.owner.toString() !== customerId
+    ) {
+      return res.status(404).json({ message: "Tài khoản nguồn không hợp lệ" });
+    }
+
+    if (sourceAccountData.balance < amount) {
+      return res.status(400).json({ message: "Số dư không đủ để thanh toán" });
+    }
+
+    // 2. Kiểm tra khoản vay đích
+    const loanPayment = await LoanPaymentDAO.findLoanPaymentById(targetPayment);
+    if (!loanPayment || loanPayment.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy khoản thanh toán" });
+    }
+
+    // 3. Cập nhật số dư tài khoản nguồn
+    sourceAccountData.balance -= amount;
+    await CheckingAccountDAO.save(sourceAccountData);
+
+    // 4. Cập nhật trạng thái thanh toán khoản vay
+    if (loanPayment.amount - amount <= 0) {
+      loanPayment.status = "PAID";
+      loanPayment.paymentDate = new Date();
+    }
+    await LoanPaymentDAO.save(loanPayment);
+
+    // 5. Tạo transaction instance và lưu
+    const newTransaction = new Transaction({
+      type: "TRANSFER",
+      amount: amount,
+      description: `Thanh toán khoản vay ${loanPayment.loan}`,
+      sourceAccountID: sourceAccount,
+      destinationAccountID: targetPayment,
+      status: "Completed",
+    });
+
+    await transactionDAO.createTransfer(newTransaction);
+
+    // 6. Cập nhật trạng thái khoản vay nếu đã thanh toán hết
+    return res.status(200).json({
+      message: "Thanh toán khoản vay thành công",
+      remainingAmount: "0",
+      paymentStatus: loanPayment.status,
+    });
+  } catch (error) {
+    console.error("Loan Payment Error:", error);
+    return res
+      .status(500)
+      .json({ message: "Lỗi máy chủ khi thanh toán khoản vay" });
+  }
+};
+
+module.exports.updateAllLoanPayments = async (req, res, next) => {
+  console.log("updateAllLoanPayments", req.body);
+
+  try {
+    // Lấy tất cả các khoản thanh toán cho khoản vay này
+    const loanPayments = await LoanPaymentDAO.getAllLoanPaymentsByLoanAccountId(
+      loan
+    );
+    if (!loanPayments || loanPayments.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy khoản thanh toán" });
+    }
+    // Cập nhật trạng thái và ngày hết hạn cho từng khoản thanh toán
+    const currentDate = new Date();
+    for (const payment of loanPayments) {
+      if (payment.status !== "PAID") {
+        // Nếu chưa thanh toán, kiểm tra ngày đến hạn
+        if (payment.dueDate < currentDate) {
+          payment.status = "OVERDUE"; // Đã quá hạn
+          payment.overdueDays = Math.floor(
+            (currentDate - payment.dueDate) / (1000 * 60 * 60 * 24)
+          ); // Tính số ngày quá hạn
+        } else {
+          payment.status = "PENDING"; // Chưa quá hạn
+          payment.overdueDays = Math.floor(
+            (currentDate - payment.dueDate) / (1000 * 60 * 60 * 24)
+          ); // Tính số ngày còn lại
+        }
+      } else if (payment.status === "PAID") {
+        // Nếu đã thanh toán, không cần cập nhật gì thêm
+        continue;
+      }
+      await LoanPaymentDAO.save(payment); // Lưu lại thay đổi
+    }
+
+    return res.status(200).json({ message: "Cập nhật thành công" });
   } catch (err) {
     return res.status(500).json({ message: "Internal Server Error" });
   }

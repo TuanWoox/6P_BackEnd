@@ -12,6 +12,23 @@ class LoanPaymentDAO {
       throw err;
     }
   }
+
+  async findLoanPaymentById(loanPaymentId) {
+    try {
+      const loanPayment = await LoanPayment.findById(loanPaymentId);
+      return loanPayment;
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async save(loanPaymentInstance) {
+    try {
+      return loanPaymentInstance.save();
+    } catch (err) {
+      throw err;
+    }
+  }
 }
 
 module.exports = new LoanPaymentDAO();
