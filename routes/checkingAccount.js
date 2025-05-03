@@ -21,6 +21,17 @@ router
   .get(checkingAccountController.checkAvilableTargetAccount);
 
 router
+  .route("/setLimitTransaction")
+  .get(
+    authMiddleware.authenticateToken,
+    checkingAccountController.getLimitTransaction
+  )
+  .post(
+    authMiddleware.authenticateToken,
+    checkingAccountController.updateLimit
+  );
+
+router
   .route("/transferMoney")
   .post(
     authMiddleware.authenticateToken,
