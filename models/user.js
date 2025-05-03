@@ -46,8 +46,8 @@ userSchema.pre("save", async function (next) {
 userSchema.post("save", async function (user, next) {
   try {
     const existing = await CheckingAccount.findOne({ owner: user._id });
-    const number = await generateUniqueAccountNumber();
     if (!existing) {
+      const number = await generateUniqueAccountNumber();
       await CheckingAccount.create({
         accountNumber: number,
         owner: user._id,
@@ -58,7 +58,6 @@ userSchema.post("save", async function (user, next) {
     }
     next(); // ✅ fixed typo
   } catch (err) {
-    console.error("Error creating checking account:", err);
     next(err);
   }
 });

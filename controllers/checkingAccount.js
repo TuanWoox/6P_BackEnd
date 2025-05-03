@@ -1,41 +1,33 @@
-const CheckingAccountDAO = require("../DAO/CheckingAccountDAO");
-const CheckingAccount = require("../models/checkingAccount");
-const transactionDAO = require("../DAO/TransactionDAO");
-const Transaction = require("../models/Transaction");
+const CheckingAccountService = require("../services/checkingAccountService");
 
-module.exports.getCheckingAccount = async (req, res, next) => {
-  const { customerId } = req.user;
-
+module.exports.getCheckingAccount = async (req, res) => {
   try {
-    const foundCheckingAccount = await CheckingAccountDAO.getCheckingAccount(
-      customerId
+    const result = await CheckingAccountService.getCheckingAccount(
+      req.user.customerId
     );
-    if (foundCheckingAccount) return res.status(200).json(foundCheckingAccount);
+    if (result) return res.status(200).json(result);
     return res.status(404).json({ message: "Không thể tìm thấy tài khoản" });
   } catch (err) {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-module.exports.getAllCheckingAccount = async (req, res, next) => {
-  const { customerId } = req.user;
-
+module.exports.getAllCheckingAccount = async (req, res) => {
   try {
-    const foundCheckingAccount = await CheckingAccountDAO.getAllCheckingAccount(
-      customerId
+    const result = await CheckingAccountService.getAllCheckingAccounts(
+      req.user.customerId
     );
-    if (foundCheckingAccount) return res.status(200).json(foundCheckingAccount);
+    if (result) return res.status(200).json(result);
     return res.status(404).json({ message: "Không thể tìm thấy tài khoản" });
   } catch (err) {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-module.exports.checkAvilableTargetAccount = async (req, res, next) => {
-  const { targetAccount } = req.params;
+module.exports.checkAvilableTargetAccount = async (req, res) => {
   try {
-    const acct = await CheckingAccountDAO.checkAvilableTargetAccount(
-      targetAccount
+    const acct = await CheckingAccountService.checkAvailableTargetAccount(
+      req.params.targetAccount
     );
     if (acct) return res.status(200).json({ fullName: acct.owner.fullName });
     return res.status(404).json({ message: "Không thể tìm thấy tài khoản" });
@@ -46,69 +38,37 @@ module.exports.checkAvilableTargetAccount = async (req, res, next) => {
 
 module.exports.transferMoney = async (req, res) => {
   try {
-    const { targetAccount, amount, description } = req.body;
-    const userId = req.user.customerId;
-
-    // 1. Lấy account hiện tại (source account)
-    const currentAccount = await CheckingAccountDAO.getCheckingAccount(userId);
-
-    if (!currentAccount) {
-      return res.status(404).json({ message: "Source account not found" });
-    }
-
-    if (currentAccount.status !== "ACTIVE") {
-      return res.status(400).json({ message: "Source account is not active" });
-    }
-
-    // 2. Tìm destination account
-    const destAccount = await CheckingAccountDAO.getByAccountNumber(
-      targetAccount
+    const savedTransaction = await CheckingAccountService.transferMoney(
+      req.user.customerId,
+      req.body
     );
-
-    if (!destAccount || destAccount.status !== "ACTIVE") {
-      return res
-        .status(404)
-        .json({ message: "Destination account not found or inactive" });
-    }
-
-    // 3. Check số dư
-    const availableBalance =
-      currentAccount.balance +
-      (currentAccount.overdraftProtection
-        ? currentAccount.dailyTransactionLimit
-        : 0);
-
-    if (availableBalance < amount) {
-      return res.status(400).json({ message: "Insufficient funds" });
-    }
-
-    // 4. Update balances
-    currentAccount.balance -= amount;
-    destAccount.balance += amount;
-    await CheckingAccountDAO.save(currentAccount);
-    await CheckingAccountDAO.save(destAccount);
-
-    // 5. Tạo transaction instance và lưu
-    const newTransaction = new Transaction({
-      type: "TRANSFER",
-      amount,
-      description,
-      sourceAccountID: currentAccount.accountNumber,
-      destinationAccountID: targetAccount,
-      status: "Completed",
-    });
-
-    const savedTransaction = await transactionDAO.createTransfer(
-      newTransaction
-    );
-    console.log("Transaction saved:", savedTransaction);
-    console.log("currentAccount:", currentAccount);
-    console.log("destAccount:", destAccount);
-
-    // 6. Trả kết quả về
     res.status(201).json(savedTransaction);
-  } catch (error) {
-    console.error("Transfer Money Error:", error);
-    res.status(500).json({ message: error.message });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+module.exports.getLimitTransaction = async (req, res) => {
+  try {
+    const result = await CheckingAccountService.getLimitTransaction(
+      req.user.customerId
+    );
+    if (result) return res.status(200).json(result);
+    return res.status(404).json({ message: "Không thể tìm thấy tài khoản" });
+  } catch (err) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+module.exports.updateLimit = async (req, res) => {
+  try {
+    const result = await CheckingAccountService.updateLimit(
+      req.user.customerId,
+      req.body
+    );
+    if (result) return res.status(200).json(result);
+    return res.status(404).json({ message: "Không thể tìm thấy tài khoản" });
+  } catch (err) {
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
