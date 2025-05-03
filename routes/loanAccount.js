@@ -40,7 +40,7 @@ router
 
 router
   .route("/loanPayment/update")
-  .post(
+  .get(
     authMiddleware.authenticateToken,
     loanAccountController.updateAllLoanPayments
   );

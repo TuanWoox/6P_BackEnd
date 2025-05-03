@@ -207,44 +207,56 @@ module.exports.confirmLoanPayment = async (req, res, next) => {
 };
 
 module.exports.updateAllLoanPayments = async (req, res, next) => {
-  console.log("updateAllLoanPayments", req.body);
+  const { loan } = req.query; // Get loan ID from query params
 
   try {
+    // Validate loan ID
+    if (!loan) {
+      return res.status(400).json({ message: "Thiếu mã khoản vay" });
+    }
+
     // Lấy tất cả các khoản thanh toán cho khoản vay này
     const loanPayments = await LoanPaymentDAO.getAllLoanPaymentsByLoanAccountId(
       loan
     );
+
     if (!loanPayments || loanPayments.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "Không tìm thấy khoản thanh toán" });
-    }
-    // Cập nhật trạng thái và ngày hết hạn cho từng khoản thanh toán
-    const currentDate = new Date();
-    for (const payment of loanPayments) {
-      if (payment.status !== "PAID") {
-        // Nếu chưa thanh toán, kiểm tra ngày đến hạn
-        if (payment.dueDate < currentDate) {
-          payment.status = "OVERDUE"; // Đã quá hạn
-          payment.overdueDays = Math.floor(
-            (currentDate - payment.dueDate) / (1000 * 60 * 60 * 24)
-          ); // Tính số ngày quá hạn
-        } else {
-          payment.status = "PENDING"; // Chưa quá hạn
-          payment.overdueDays = Math.floor(
-            (currentDate - payment.dueDate) / (1000 * 60 * 60 * 24)
-          ); // Tính số ngày còn lại
-        }
-      } else if (payment.status === "PAID") {
-        // Nếu đã thanh toán, không cần cập nhật gì thêm
-        continue;
-      }
-      await LoanPaymentDAO.save(payment); // Lưu lại thay đổi
+      return res.status(404).json({
+        message: "Không tìm thấy khoản thanh toán",
+      });
     }
 
-    return res.status(200).json({ message: "Cập nhật thành công" });
+    // Cập nhật trạng thái và ngày hết hạn cho từng khoản thanh toán
+    const currentDate = new Date();
+    const updatedPayments = [];
+
+    for (const payment of loanPayments) {
+      if (payment.status !== "PAID") {
+        if (payment.dueDate < currentDate) {
+          payment.status = "OVERDUE";
+          payment.overdueDays = Math.floor(
+            (currentDate - payment.dueDate) / (1000 * 60 * 60 * 24)
+          );
+        } else {
+          payment.status = "PENDING";
+          payment.overdueDays = Math.floor(
+            (payment.dueDate - currentDate) / (1000 * 60 * 60 * 24)
+          );
+        }
+        await LoanPaymentDAO.save(payment);
+        updatedPayments.push(payment);
+      }
+    }
+
+    return res.status(200).json({
+      message: "Cập nhật thành công",
+      payments: updatedPayments,
+    });
   } catch (err) {
-    return res.status(500).json({ message: "Internal Server Error" });
+    console.error("Update loan payments error:", err);
+    return res.status(500).json({
+      message: "Lỗi máy chủ khi cập nhật khoản thanh toán",
+    });
   }
 };
 
