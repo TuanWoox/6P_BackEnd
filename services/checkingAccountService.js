@@ -24,26 +24,7 @@ class CheckingAccountService {
     const destAccount = await CheckingAccountDAO.getByAccountNumber(
       targetAccount
     );
-    if (!destAccount || destAccount.status !== "ACTIVE") {
-      throw new Error("Invalid or inactive destination account");
-    }
-
-    const availableBalance =
-      currentAccount.balance +
-      (currentAccount.overdraftProtection
-        ? currentAccount.dailyTransactionLimit
-        : 0);
-
-    if (availableBalance < amount) {
-      throw new Error("Insufficient funds");
-    }
-
-    currentAccount.balance -= amount;
-    destAccount.balance += amount;
-
-    await CheckingAccountDAO.save(currentAccount);
-    await CheckingAccountDAO.save(destAccount);
-
+    currentAccount.transferMoney(destAccount, amount);
     const newTransaction = new Transaction({
       type: "TRANSFER",
       amount,
@@ -52,6 +33,10 @@ class CheckingAccountService {
       destinationAccountID: targetAccount,
       status: "Completed",
     });
+    await Promise.all([
+      CheckingAccountDAO.save(currentAccount),
+      CheckingAccountDAO.save(destAccount),
+    ]);
 
     return await transactionDAO.createTransfer(newTransaction);
   }

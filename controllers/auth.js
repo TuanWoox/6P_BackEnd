@@ -5,6 +5,7 @@ module.exports.signUp = async (req, res) => {
     await authService.signUp(req.body.customer);
     return res.status(201).json({ message: "Tạo tài khoản thành công" });
   } catch (err) {
+    console.log(err);
     return res.status(500).json({ error: err.message });
   }
 };

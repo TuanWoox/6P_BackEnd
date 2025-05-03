@@ -14,6 +14,23 @@ const checkingAccountSchema = new Schema(
   },
   { discriminatorKey: "accountType", timestamps: true }
 );
+checkingAccountSchema.methods.hasSufficientBalance = function (amount) {
+  const available =
+    this.balance + (this.overdraftProtection ? this.dailyTransactionLimit : 0);
+  return available >= amount;
+};
+checkingAccountSchema.methods.transferMoney = function (destAccount, amount) {
+  if (!destAccount || destAccount.status !== "ACTIVE") {
+    throw new Error("Invalid or inactive destination account");
+  }
+
+  if (!this.hasSufficientBalance(amount)) {
+    throw new Error("Insufficient funds");
+  }
+
+  this.balance -= amount;
+  destAccount.balance += amount;
+};
 
 const CheckingAccount = Account.discriminator(
   "CheckingAccount",
