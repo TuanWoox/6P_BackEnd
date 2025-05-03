@@ -61,11 +61,9 @@ class CustomerService {
   static async updateCustomerProfile(customerId, updatedData) {
     const customer = await CustomerDAO.getCustomerProfile(customerId);
     if (!customer) throw new Error("Customer not found");
-    const isUpdated = await CustomerDAO.updateCustomerProfile(
-      customerId,
-      updatedData
-    );
-    if (!isUpdated) throw new Error("Unable to update customer profile");
+    customer.updateCustomerProfile(data);
+    const savedCustomer = await CustomerDAO.saveCustomer(customer);
+    if (!savedCustomer) throw new Error("Unable to update customer profile");
     return true;
   }
 }

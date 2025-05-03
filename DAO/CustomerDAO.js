@@ -46,7 +46,7 @@ class CustomerDAO {
     }
   }
   async resetPassword(customer, newPassword) {
-    try{
+    try {
       customer.password = newPassword;
       await customer.save();
     } catch (err) {
@@ -76,7 +76,7 @@ class CustomerDAO {
         return { success: false, error: "Mật khẩu hiện tại không đúng" };
       }
 
-      customer.password = newPassword; // The pre-save hook will hash this
+      customer.changePassword(newPassword);
       await customer.save();
 
       return { success: true };
@@ -84,17 +84,12 @@ class CustomerDAO {
       throw err;
     }
   }
-  async updateCustomerProfile(customerId, updatedData) {
+  async saveCustomer(customer) {
     try {
-      const customer = await this.getCustomerProfile(customerId);
-      if (!customer) {
-        return null;
-      }
-      Object.assign(customer, updatedData);
-      await customer.save();
-      return true;
+      const savedCustomer = await customer.save();
+      return savedCustomer;
     } catch (err) {
-      throw err;
+      throw new Error(`Failed to save customer: ${err.message}`);
     }
   }
 }

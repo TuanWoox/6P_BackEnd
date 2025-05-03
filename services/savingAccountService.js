@@ -143,7 +143,6 @@ class SavingAccountController {
   static async withdrawSaving(customerId, accountId) {
     try {
       const saving = await SavingAccountDAO.getSavingAccountById(accountId);
-
       if (!saving || saving.status !== "ACTIVE") {
         throw new Error("Sổ tiết kiệm không tồn tại hoặc đã tất toán.");
       }
@@ -154,71 +153,8 @@ class SavingAccountController {
       if (!checkingAccount) {
         throw new Error("Tài khoản thanh toán không tồn tại.");
       }
-
-      const principalAmount = saving.balance;
-      const dateOpened = saving.dateOpened;
-      const savingInterest = saving.savingTypeInterest || {};
-
-      const dailyInterestRate = savingInterest.dailyInterestRate ?? 0;
-      const monthlyInterestRate = savingInterest.monthlyInterestRate ?? 0;
-      const maturityPeriod = savingInterest.maturityPeriod ?? 0;
-      const percentMoneyLose0 = savingInterest.percentMoneyLose0 ?? 0;
-
-      const today = new Date();
-      const openedDate = new Date(dateOpened);
-      const daysDeposited = differenceInDays(today, openedDate);
-
-      const maturityDate = new Date(openedDate);
-      maturityDate.setMonth(maturityDate.getMonth() + maturityPeriod);
-      const isEarlyWithdrawal = maturityPeriod > 0 && today < maturityDate;
-
-      let interestEarned = 0;
-      if (maturityPeriod === 0) {
-        interestEarned =
-          principalAmount * (dailyInterestRate / 100) * daysDeposited;
-      } else {
-        interestEarned =
-          principalAmount * (monthlyInterestRate / 100) * maturityPeriod;
-      }
-
-      let totalAmount = principalAmount + interestEarned;
-      let penaltyAmount = 0;
-
-      if (isEarlyWithdrawal) {
-        penaltyAmount = interestEarned;
-        totalAmount -= penaltyAmount;
-      }
-
-      checkingAccount.balance += totalAmount;
-      saving.status = "CLOSED";
-      saving.updatedAt = today;
-
-      const transaction = new Transaction({
-        type: "WITHDRAWAL",
-        amount: totalAmount,
-        description: isEarlyWithdrawal
-          ? "Tất toán trước hạn"
-          : "Tất toán đúng hạn",
-        sourceAccountID: saving.accountNumber,
-        destinationAccountID: checkingAccount.accountNumber,
-        status: "Completed",
-      });
-
-      await transaction.validate();
-
-      await Promise.all([
-        checkingAccount.save(),
-        saving.save(),
-        transaction.save(),
-      ]);
-
-      return {
-        totalAmount,
-        principalAmount,
-        interestEarned,
-        penaltyAmount,
-        isEarlyWithdrawal,
-      };
+      const withdrawalDetails = await saving.withdraw(checkingAccount);
+      return withdrawalDetails;
     } catch (err) {
       throw new Error(err.message || "Lỗi hệ thống khi tất toán.");
     }

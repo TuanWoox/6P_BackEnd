@@ -5,4 +5,8 @@ const customerSchema = new Schema({
   maximumMoneyTransfer: Number,
 });
 
+customerSchema.methods.updateCustomerProfile = function (updatedData) {
+  Object.assign(this, updatedData);
+};
+
 module.exports = User.discriminator("Customer", customerSchema);

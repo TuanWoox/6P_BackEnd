@@ -62,4 +62,8 @@ userSchema.post("save", async function (user, next) {
   }
 });
 
+userSchema.methods.changePassword = function (newPassword) {
+  this.password = newPassword;
+};
+
 module.exports = mongoose.model("User", userSchema);
