@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const CheckingAccount = require("./checkingAccount");
+
 const { generateUniqueAccountNumber } = require("../utils/utils");
 const { Schema } = mongoose;
 
@@ -61,5 +62,9 @@ userSchema.post("save", async function (user, next) {
     next(err);
   }
 });
+
+userSchema.methods.changePassword = function (newPassword) {
+  this.password = newPassword;
+};
 
 module.exports = mongoose.model("User", userSchema);

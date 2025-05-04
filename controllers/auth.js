@@ -1,10 +1,18 @@
-const authService = require("../services/authService");
+// controllers/authController.js
+const Customer = require("../models/customer");
+const CustomerDAO = require("../DAO/CustomerDAO");
+const AuthDAO = require("../DAO/AuthDAO");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const { generateAccessToken, generateRefreshToken } = require("../utils/utils");
 
 module.exports.signUp = async (req, res) => {
   try {
-    await authService.signUp(req.body.customer);
+    const newCustomer = new Customer(req.body.customer);
+    await CustomerDAO.createCustomer(newCustomer);
     return res.status(201).json({ message: "Tạo tài khoản thành công" });
   } catch (err) {
+    console.log(err);
     return res.status(500).json({ error: err.message });
   }
 };
@@ -15,7 +23,7 @@ module.exports.checkAccount = async (req, res) => {
     return res.status(400).json({ message: "Email và mật khẩu là bắt buộc" });
 
   try {
-    const user = await authService.checkAccount(email, password);
+    const user = await AuthDAO.login(email, password);
     if (!user)
       return res
         .status(401)
@@ -32,7 +40,7 @@ module.exports.isEmailAvailable = async (req, res) => {
     if (!email)
       return res.status(400).json({ message: "Email không được để trống" });
 
-    const exists = await authService.isEmailAvailable(email);
+    const exists = await AuthDAO.isEmailAvailable(email);
     if (exists)
       return res.status(409).json({ message: "Email đã có người đăng kí" });
 
@@ -48,7 +56,7 @@ module.exports.checkEmailAvailable = async (req, res) => {
     if (!email)
       return res.status(400).json({ message: "Email không được để trống" });
 
-    const exists = await authService.checkEmailExists(email);
+    const exists = await AuthDAO.isEmailAvailable(email);
     if (!exists)
       return res.status(409).json({ message: "Email chưa có người đăng kí" });
 
@@ -64,7 +72,7 @@ module.exports.identityVerification = async (req, res) => {
     return res.status(400).json({ message: "Thiếu thông tin cần thiết" });
 
   try {
-    const user = await authService.identityVerification(
+    const user = await AuthDAO.identityVerification(
       fullName,
       nationalID,
       email
@@ -84,10 +92,13 @@ module.exports.login = async (req, res) => {
     return res.status(401).json({ message: "Forbidden" });
 
   try {
-    const { accessToken, refreshToken } = await authService.login(
-      email,
-      password
-    );
+    const customer = await AuthDAO.login(email, password);
+    const isMatch = await bcrypt.compare(password, customer.password);
+    if (!isMatch) throw new Error("Invalid credentials");
+
+    const accessToken = generateAccessToken(customer);
+    const refreshToken = generateRefreshToken(customer);
+    await AuthDAO.storeRefreshToken(customer, refreshToken);
 
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
@@ -118,14 +129,24 @@ module.exports.refreshToken = async (req, res) => {
     return res.status(401).json({ message: "Bạn không được xác thực" });
 
   try {
-    const newAccessToken = await authService.refreshToken(token);
-    res.cookie("accessToken", newAccessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+    const found = await AuthDAO.fetchRefreshToken(token);
+    if (!found) throw new Error("Invalid refresh token");
 
-    return res.status(200).json({ message: "Token refreshed successfully" });
+    jwt.verify(token, process.env.JWT_REFRESH_SECRET_KEY, (err, user) => {
+      if (err) {
+        res.clearCookie("refreshToken");
+        return res.status(403).json({ message: "Token không hợp lệ" });
+      }
+
+      const newAccessToken = generateAccessToken(user);
+      res.cookie("accessToken", newAccessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      });
+
+      return res.status(200).json({ message: "Token refreshed successfully" });
+    });
   } catch {
     res.clearCookie("refreshToken");
     return res.status(403).json({ message: "Token không hợp lệ" });
@@ -135,7 +156,7 @@ module.exports.refreshToken = async (req, res) => {
 module.exports.logout = async (req, res) => {
   try {
     const token = req.cookies.refreshToken;
-    if (token) await authService.logout(token);
+    if (token) await AuthDAO.deleteRefreshToken(token);
 
     res.clearCookie("accessToken", { path: "/" });
     res.clearCookie("refreshToken", { path: "/auth" });
@@ -154,8 +175,14 @@ module.exports.validateJWT = async (req, res) => {
       .json({ message: "Unauthorized - No token provided" });
 
   try {
-    await authService.validateJWT(token);
-    return res.status(200).json({ message: "Validate Successfully" });
+    jwt.verify(token, process.env.JWT_SECRET_KEY, (err, user) => {
+      if (err)
+        return res
+          .status(403)
+          .json({ message: "Unauthorized - Invalid or expired token" });
+
+      return res.status(200).json({ message: "Validate Successfully" });
+    });
   } catch {
     return res
       .status(403)
