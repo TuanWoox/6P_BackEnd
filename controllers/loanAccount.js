@@ -71,23 +71,19 @@ module.exports.findLoanInterestRates = async (req, res) => {
 
 module.exports.createLoanAccount = async (req, res) => {
   const { customerId } = req.user;
-  const { loanType, loanTerm, loanAmount, selectedLoanInterestRate } = req.body;
+  const { loanType, loanAmount, selectedLoanInterestRate } = req.body;
 
-  if (
-    !selectedLoanInterestRate ||
-    !selectedLoanInterestRate.annualInterestRate
-  ) {
-    return res.status(400).json({ message: "Invalid loan interest rate data" });
-  }
+  // console.log("req.body", req.body);
 
   try {
     const result = await LoanAccountService.createLoanAccount(
       customerId,
       loanType,
-      loanTerm,
       loanAmount,
       selectedLoanInterestRate
     );
+
+    console.log("result", result);
     return res.status(201).json(result);
   } catch (err) {
     return res.status(500).json({ message: err.message });
