@@ -286,16 +286,11 @@ module.exports.getLoanTypeInterestById = async (req, res) => {
   }
 };
 module.exports.createLoanPayments = async (req, res) => {
-  const { loanId } = req.params;
+  // const { loanId } = req.params;
   const { payments } = req.body; // Array of payments to be created
 
   try {
-    if (
-      !loanId ||
-      !payments ||
-      !Array.isArray(payments) ||
-      payments.length === 0
-    ) {
+    if (!payments || !Array.isArray(payments) || payments.length === 0) {
       return res
         .status(400)
         .json({ message: "Dữ liệu không hợp lệ để tạo thanh toán" });
@@ -304,20 +299,22 @@ module.exports.createLoanPayments = async (req, res) => {
     const createdPayments = [];
 
     for (const paymentData of payments) {
-      const payment = await LoanPaymentDAO.createLoanPayment({
-        loan: loanId,
+      const payment = await LoanPaymentDAO.createPayment({
+        loan: paymentData.loan,
         dueDate: paymentData.dueDate,
         amount: paymentData.amount,
         status: "PENDING",
       });
       createdPayments.push(payment);
     }
+    console.log("Tạo các khoản thanh toán thành công:", createdPayments);
 
     return res.status(201).json({
       message: "Tạo các khoản thanh toán thành công",
       payments: createdPayments,
     });
   } catch (err) {
+    console.log("Lỗi trong createLoanPayments:", err.message);
     return res
       .status(500)
       .json({ message: err.message || "Internal Server Error" });
