@@ -59,8 +59,7 @@ module.exports.updateLimit = async (req, res) => {
     );
     if (!checkingAccount)
       return res.status(404).json({ message: "Không thể tìm thấy tài khoản" });
-
-    checkingAccount.dailyTransactionLimit = req.body.newLimit;
+    checkingAccount.updateDailyTransactionLimit(req.body.newLimit);
     const saved = await CheckingAccountDAO.save(checkingAccount);
     return res.status(200).json(saved);
   } catch (err) {

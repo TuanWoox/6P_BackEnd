@@ -31,6 +31,9 @@ checkingAccountSchema.methods.depositSavingAccount = function (
   this.balance -= amount;
   savingAccount.balance += amount;
 };
+checkingAccountSchema.updateDailyTransactionLimit = function (newLimit) {
+  this.dailyTransactionLimit = newLimit;
+};
 
 const CheckingAccount = Account.discriminator(
   "CheckingAccount",
