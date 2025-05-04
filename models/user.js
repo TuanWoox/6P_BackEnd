@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const CheckingAccount = require("./checkingAccount");
+
 const { generateUniqueAccountNumber } = require("../utils/utils");
 const { Schema } = mongoose;
 

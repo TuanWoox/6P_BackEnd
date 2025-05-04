@@ -9,6 +9,7 @@ class CustomerDAO {
       throw error;
     }
   }
+
   async getCustomerProfile(customerId) {
     try {
       const foundUser = await Customer.findById(customerId);
@@ -45,14 +46,6 @@ class CustomerDAO {
       throw err;
     }
   }
-  async resetPassword(customer, newPassword) {
-    try {
-      customer.password = newPassword;
-      await customer.save();
-    } catch (err) {
-      throw err;
-    }
-  }
   async getCustomerEmail(customerId) {
     try {
       const { email } = await Customer.findById(customerId);
@@ -60,26 +53,6 @@ class CustomerDAO {
         return null;
       }
       return email;
-    } catch (err) {
-      throw err;
-    }
-  }
-  async changePassword(customerId, oldPassword, newPassword) {
-    try {
-      const customer = await this.getCustomerProfile(customerId);
-      if (!customer) {
-        return { success: false, error: "Không tìm thấy tài khoản" };
-      }
-
-      const isMatch = await bcrypt.compare(oldPassword, customer.password);
-      if (!isMatch) {
-        return { success: false, error: "Mật khẩu hiện tại không đúng" };
-      }
-
-      customer.changePassword(newPassword);
-      await customer.save();
-
-      return { success: true };
     } catch (err) {
       throw err;
     }
