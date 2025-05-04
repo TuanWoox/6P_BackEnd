@@ -1,6 +1,6 @@
 const CheckingAccountDAO = require("../DAO/CheckingAccountDAO");
 const transactionDAO = require("../DAO/TransactionDAO");
-const Transaction = require("../models/Transaction");
+const Transaction = require("../models/transaction");
 
 module.exports.getCheckingAccount = async (req, res) => {
   try {

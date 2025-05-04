@@ -3,7 +3,7 @@ const LoanPaymentDAO = require("../DAO/LoanPaymentDAO");
 const LoanTypeDAO = require("../DAO/LoanTypeDAO");
 const LoanTypeInterestRatesDAO = require("../DAO/LoanTypeInterestRatesDAO");
 const CheckingAccountDAO = require("../DAO/CheckingAccountDAO");
-const Transaction = require("../models/Transaction");
+const Transaction = require("../models/transaction");
 const transactionDAO = require("../DAO/TransactionDAO");
 const LoanAccount = require("../models/loanAccount");
 
@@ -220,7 +220,7 @@ module.exports.confirmLoanPayment = async (req, res) => {
 };
 
 module.exports.updateAllLoanPayments = async (req, res) => {
-  const { loanId } = req.params;
+  const { loan: loanId } = req.query;
 
   try {
     if (!loanId) {
@@ -307,14 +307,12 @@ module.exports.createLoanPayments = async (req, res) => {
       });
       createdPayments.push(payment);
     }
-    console.log("Tạo các khoản thanh toán thành công:", createdPayments);
 
     return res.status(201).json({
       message: "Tạo các khoản thanh toán thành công",
       payments: createdPayments,
     });
   } catch (err) {
-    console.log("Lỗi trong createLoanPayments:", err.message);
     return res
       .status(500)
       .json({ message: err.message || "Internal Server Error" });

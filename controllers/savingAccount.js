@@ -2,7 +2,7 @@ const SavingAccountDAO = require("../DAO/SavingAccountDAO");
 const SavingTypeInterestDAO = require("../DAO/SavingTypeInterestDAO");
 const CheckingAccountDAO = require("../DAO/CheckingAccountDAO");
 const TransactionDAO = require("../DAO/TransactionDAO");
-const Transaction = require("../models/Transaction");
+const Transaction = require("../models/transaction");
 const { generateUniqueAccountNumber } = require("../utils/utils");
 const { differenceInDays } = require("date-fns");
 const SavingAccount = require("../models/savingAccount");
@@ -35,11 +35,9 @@ module.exports.getSavingAccountById = async (req, res) => {
     ) {
       return res.status(200).json(foundSavingAccount);
     }
-    return res
-      .status(404)
-      .json({
-        message: "Không tìm thấy tài khoản hoặc không có quyền truy cập",
-      });
+    return res.status(404).json({
+      message: "Không tìm thấy tài khoản hoặc không có quyền truy cập",
+    });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -51,7 +49,6 @@ module.exports.getAllSavingInterestRates = async (req, res) => {
       await SavingTypeInterestDAO.getAllSavingTypeInterest();
     return res.status(200).json(savingInterestRates);
   } catch (err) {
-    console.log(err);
     return res.status(500).json({ message: err.message });
   }
 };
@@ -181,7 +178,6 @@ module.exports.withdrawSaving = async (req, res) => {
       ...withdrawalDetails,
     });
   } catch (err) {
-    console.log(err);
     return res.status(500).json({ message: err.message });
   }
 };

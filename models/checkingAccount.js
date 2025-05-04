@@ -20,8 +20,8 @@ checkingAccountSchema.methods.hasSufficientBalance = function (amount) {
   return available >= amount;
 };
 checkingAccountSchema.methods.transferMoney = function (destAccount, amount) {
-  this.balance -= amount;
-  destAccount.balance += amount;
+  this.balance -= Number(amount);
+  destAccount.balance += Number(amount);
 };
 
 checkingAccountSchema.methods.depositSavingAccount = function (
@@ -31,7 +31,9 @@ checkingAccountSchema.methods.depositSavingAccount = function (
   this.balance -= amount;
   savingAccount.balance += amount;
 };
-checkingAccountSchema.updateDailyTransactionLimit = function (newLimit) {
+checkingAccountSchema.methods.updateDailyTransactionLimit = function (
+  newLimit
+) {
   this.dailyTransactionLimit = newLimit;
 };
 

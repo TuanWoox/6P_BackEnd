@@ -1,7 +1,7 @@
 const CustomerDAO = require("../DAO/CustomerDAO");
 const CheckingAccountDAO = require("../DAO/CheckingAccountDAO");
 const TransactionDAO = require("../DAO/TransactionDAO");
-const Transaction = require("../models/Transaction");
+const Transaction = require("../models/transaction");
 const bcrypt = require("bcrypt");
 
 module.exports.getInformationForSideBar = async (req, res, next) => {
