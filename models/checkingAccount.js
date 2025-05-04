@@ -31,7 +31,9 @@ checkingAccountSchema.methods.depositSavingAccount = function (
   this.balance -= amount;
   savingAccount.balance += amount;
 };
-checkingAccountSchema.updateDailyTransactionLimit = function (newLimit) {
+checkingAccountSchema.methods.updateDailyTransactionLimit = function (
+  newLimit
+) {
   this.dailyTransactionLimit = newLimit;
 };
 

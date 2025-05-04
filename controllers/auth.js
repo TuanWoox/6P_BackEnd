@@ -12,7 +12,6 @@ module.exports.signUp = async (req, res) => {
     await CustomerDAO.createCustomer(newCustomer);
     return res.status(201).json({ message: "Tạo tài khoản thành công" });
   } catch (err) {
-    console.log(err);
     return res.status(500).json({ error: err.message });
   }
 };
@@ -28,8 +27,17 @@ module.exports.checkAccount = async (req, res) => {
       return res
         .status(401)
         .json({ message: "Thông tin đăng nhập không chính xác" });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res
+        .status(401)
+        .json({ message: "Thông tin đăng nhập không chính xác" }); // Early return if password does not match
+    }
+
     return res.status(200).json({ message: "Email và mật khẩu hợp lệ" });
-  } catch {
+  } catch (err) {
+    console.log(err);
     return res.status(500).json({ message: "Lỗi máy chủ nội bộ" });
   }
 };
@@ -94,7 +102,7 @@ module.exports.login = async (req, res) => {
   try {
     const customer = await AuthDAO.login(email, password);
     const isMatch = await bcrypt.compare(password, customer.password);
-    if (!isMatch) throw new Error("Invalid credentials");
+    if (!isMatch) throw new Error("Thông tin đăng nhập không chính xác");
 
     const accessToken = generateAccessToken(customer);
     const refreshToken = generateRefreshToken(customer);

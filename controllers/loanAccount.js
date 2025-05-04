@@ -220,7 +220,7 @@ module.exports.confirmLoanPayment = async (req, res) => {
 };
 
 module.exports.updateAllLoanPayments = async (req, res) => {
-  const { loanId } = req.params;
+  const { loan: loanId } = req.query;
 
   try {
     if (!loanId) {

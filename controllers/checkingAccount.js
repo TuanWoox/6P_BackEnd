@@ -63,6 +63,7 @@ module.exports.updateLimit = async (req, res) => {
     const saved = await CheckingAccountDAO.save(checkingAccount);
     return res.status(200).json(saved);
   } catch (err) {
+    console.log(err);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
