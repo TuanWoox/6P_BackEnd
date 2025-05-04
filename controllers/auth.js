@@ -12,7 +12,6 @@ module.exports.signUp = async (req, res) => {
     await CustomerDAO.createCustomer(newCustomer);
     return res.status(201).json({ message: "Tạo tài khoản thành công" });
   } catch (err) {
-    console.log(err);
     return res.status(500).json({ error: err.message });
   }
 };
@@ -28,8 +27,17 @@ module.exports.checkAccount = async (req, res) => {
       return res
         .status(401)
         .json({ message: "Thông tin đăng nhập không chính xác" });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res
+        .status(401)
+        .json({ message: "Thông tin đăng nhập không chính xác" }); // Early return if password does not match
+    }
+
     return res.status(200).json({ message: "Email và mật khẩu hợp lệ" });
-  } catch {
+  } catch (err) {
+    console.log(err);
     return res.status(500).json({ message: "Lỗi máy chủ nội bộ" });
   }
 };
@@ -94,7 +102,7 @@ module.exports.login = async (req, res) => {
   try {
     const customer = await AuthDAO.login(email, password);
     const isMatch = await bcrypt.compare(password, customer.password);
-    if (!isMatch) throw new Error("Invalid credentials");
+    if (!isMatch) throw new Error("Thông tin đăng nhập không chính xác");
 
     const accessToken = generateAccessToken(customer);
     const refreshToken = generateRefreshToken(customer);
@@ -102,16 +110,17 @@ module.exports.login = async (req, res) => {
 
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: true,
+      sameSite: "none",
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: true,
+      sameSite: "none",
       path: "/auth",
     });
+    console.log("Hi");
 
     res.clearCookie("OTPToken", { path: "/" });
 
@@ -141,8 +150,8 @@ module.exports.refreshToken = async (req, res) => {
       const newAccessToken = generateAccessToken(user);
       res.cookie("accessToken", newAccessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        secure: true,
+        sameSite: "none",
       });
 
       return res.status(200).json({ message: "Token refreshed successfully" });
@@ -169,10 +178,15 @@ module.exports.logout = async (req, res) => {
 
 module.exports.validateJWT = async (req, res) => {
   const token = req.cookies.accessToken;
-  if (!token)
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!token || !refreshToken) {
+    res.clearCookie("accessToken", { path: "/" });
+    res.clearCookie("refreshToken", { path: "/auth" });
     return res
       .status(401)
       .json({ message: "Unauthorized - No token provided" });
+  }
 
   try {
     jwt.verify(token, process.env.JWT_SECRET_KEY, (err, user) => {

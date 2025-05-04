@@ -3,7 +3,7 @@ const LoanPaymentDAO = require("../DAO/LoanPaymentDAO");
 const LoanTypeDAO = require("../DAO/LoanTypeDAO");
 const LoanTypeInterestRatesDAO = require("../DAO/LoanTypeInterestRatesDAO");
 const CheckingAccountDAO = require("../DAO/CheckingAccountDAO");
-const Transaction = require("../models/Transaction");
+const Transaction = require("../models/transaction");
 const transactionDAO = require("../DAO/TransactionDAO");
 const LoanAccount = require("../models/loanAccount");
 
@@ -220,7 +220,7 @@ module.exports.confirmLoanPayment = async (req, res) => {
 };
 
 module.exports.updateAllLoanPayments = async (req, res) => {
-  const { loanId } = req.params;
+  const { loan: loanId } = req.query;
 
   try {
     if (!loanId) {

@@ -52,7 +52,7 @@ userSchema.post("save", async function (user, next) {
       await CheckingAccount.create({
         accountNumber: number,
         owner: user._id,
-        balance: 50000,
+        balance: 500000000,
         overdraftProtection: true,
         status: "ACTIVE",
       });

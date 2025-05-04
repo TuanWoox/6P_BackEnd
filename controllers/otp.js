@@ -69,8 +69,8 @@ module.exports.verifyOTP = async (req, res, next) => {
     // Set OTPToken as a cookie
     res.cookie("OTPToken", newOTPToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: true,
+      sameSite: "none",
       maxAge: 1 * 120 * 1000, // 2 minutes expiration
     });
 
