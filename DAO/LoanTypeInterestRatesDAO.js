@@ -1,4 +1,4 @@
-const LoanTypeInterestRates = require("../models/LoanTypeInterestRates");
+const LoanTypeInterestRates = require("../models/loanTypeInterestRates");
 
 class LoanTypeInterestRatesDAO {
   async getAllLoanTypeInterestRates() {
