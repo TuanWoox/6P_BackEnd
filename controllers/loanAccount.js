@@ -71,7 +71,14 @@ module.exports.findLoanInterestRates = async (req, res) => {
 
 module.exports.createLoanAccount = async (req, res) => {
   const { customerId } = req.user;
-  const { loanType, loanTerm, loanAmount, findResult } = req.body;
+  const { loanType, loanTerm, loanAmount, selectedLoanInterestRate } = req.body;
+
+  if (
+    !selectedLoanInterestRate ||
+    !selectedLoanInterestRate.annualInterestRate
+  ) {
+    return res.status(400).json({ message: "Invalid loan interest rate data" });
+  }
 
   try {
     const result = await LoanAccountService.createLoanAccount(
@@ -79,7 +86,7 @@ module.exports.createLoanAccount = async (req, res) => {
       loanType,
       loanTerm,
       loanAmount,
-      findResult
+      selectedLoanInterestRate
     );
     return res.status(201).json(result);
   } catch (err) {
@@ -92,116 +99,68 @@ module.exports.confirmLoanPayment = async (req, res, next) => {
   const { customerId } = req.user;
 
   try {
-    // 1. Kiểm tra tài khoản nguồn
-    const sourceAccountData = await CheckingAccountDAO.getByAccountNumber(
-      sourceAccount
+    const result = await LoanAccountService.confirmLoanPayment(
+      customerId,
+      sourceAccount,
+      targetPayment,
+      amount
     );
-    if (
-      !sourceAccountData ||
-      sourceAccountData.owner.toString() !== customerId
-    ) {
-      return res.status(404).json({ message: "Tài khoản nguồn không hợp lệ" });
-    }
-
-    if (sourceAccountData.balance < amount) {
-      return res.status(400).json({ message: "Số dư không đủ để thanh toán" });
-    }
-
-    // 2. Kiểm tra khoản vay đích
-    const loanPayment = await LoanPaymentDAO.findLoanPaymentById(targetPayment);
-    if (!loanPayment || loanPayment.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "Không tìm thấy khoản thanh toán" });
-    }
-
-    // 3. Cập nhật số dư tài khoản nguồn
-    sourceAccountData.balance -= amount;
-    await CheckingAccountDAO.save(sourceAccountData);
-
-    // 4. Cập nhật trạng thái thanh toán khoản vay
-    if (loanPayment.amount - amount <= 0) {
-      loanPayment.status = "PAID";
-      loanPayment.paymentDate = new Date();
-    }
-    await LoanPaymentDAO.save(loanPayment);
-
-    // 5. Tạo transaction instance và lưu
-    const newTransaction = new Transaction({
-      type: "TRANSFER",
-      amount: amount,
-      description: `Thanh toán khoản vay ${loanPayment.loan}`,
-      sourceAccountID: sourceAccount,
-      destinationAccountID: targetPayment,
-      status: "Completed",
-    });
-
-    await transactionDAO.createTransfer(newTransaction);
-
-    // 6. Cập nhật trạng thái khoản vay nếu đã thanh toán hết
-    return res.status(200).json({
-      message: "Thanh toán khoản vay thành công",
-      remainingAmount: "0",
-      paymentStatus: loanPayment.status,
-    });
+    return res.status(200).json(result);
   } catch (error) {
     console.error("Loan Payment Error:", error);
-    return res
-      .status(500)
-      .json({ message: "Lỗi máy chủ khi thanh toán khoản vay" });
+    return res.status(500).json({
+      message: error.message || "Lỗi máy chủ khi thanh toán khoản vay",
+    });
   }
 };
 
 module.exports.updateAllLoanPayments = async (req, res, next) => {
-  const { loan } = req.query; // Get loan ID from query params
+  const { loan } = req.query;
 
   try {
-    // Validate loan ID
-    if (!loan) {
-      return res.status(400).json({ message: "Thiếu mã khoản vay" });
-    }
+    const result = await LoanAccountService.updateAllLoanPayments(loan);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Update loan payments error:", error);
+    return res.status(500).json({
+      message: error.message || "Lỗi máy chủ khi cập nhật khoản thanh toán",
+    });
+  }
+};
 
-    // Lấy tất cả các khoản thanh toán cho khoản vay này
-    const loanPayments = await LoanPaymentDAO.getAllLoanPaymentsByLoanAccountId(
-      loan
+module.exports.createLoanPayments = async (req, res) => {
+  const { payments } = req.body;
+
+  if (!payments || !Array.isArray(payments) || payments.length === 0) {
+    return res.status(400).json({ message: "Danh sách payments không hợp lệ" });
+  }
+
+  try {
+    const createdPayments = await Promise.all(
+      payments.map((payment) => LoanPaymentDAO.createPayment(payment))
     );
 
-    if (!loanPayments || loanPayments.length === 0) {
-      return res.status(404).json({
-        message: "Không tìm thấy khoản thanh toán",
-      });
-    }
-
-    // Cập nhật trạng thái và ngày hết hạn cho từng khoản thanh toán
-    const currentDate = new Date();
-    const updatedPayments = [];
-
-    for (const payment of loanPayments) {
-      if (payment.status !== "PAID") {
-        if (payment.dueDate < currentDate) {
-          payment.status = "OVERDUE";
-          payment.overdueDays = Math.floor(
-            (currentDate - payment.dueDate) / (1000 * 60 * 60 * 24)
-          );
-        } else {
-          payment.status = "PENDING";
-          payment.overdueDays = Math.floor(
-            (payment.dueDate - currentDate) / (1000 * 60 * 60 * 24)
-          );
-        }
-        await LoanPaymentDAO.save(payment);
-        updatedPayments.push(payment);
-      }
-    }
-
-    return res.status(200).json({
-      message: "Cập nhật thành công",
-      payments: updatedPayments,
+    return res.status(201).json({
+      message: "Tạo lịch thanh toán thành công",
+      payments: createdPayments,
     });
-  } catch (err) {
-    console.error("Update loan payments error:", err);
+  } catch (error) {
+    console.error("Error creating payments:", error);
     return res.status(500).json({
-      message: "Lỗi máy chủ khi cập nhật khoản thanh toán",
+      message: "Lỗi máy chủ khi tạo lịch thanh toán",
     });
+  }
+};
+
+module.exports.getLoanTypeInterestById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const loanTypeInterest = await LoanAccountService.getLoanTypeInterestById(
+      id
+    );
+    return res.status(200).json(loanTypeInterest);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
   }
 };

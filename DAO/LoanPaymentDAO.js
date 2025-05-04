@@ -29,6 +29,16 @@ class LoanPaymentDAO {
       throw err;
     }
   }
+
+  async createPayment(paymentData) {
+    try {
+      console.log("Payment Data:", paymentData);
+      const payment = new LoanPayment(paymentData);
+      return await payment.save();
+    } catch (err) {
+      throw err;
+    }
+  }
 }
 
 module.exports = new LoanPaymentDAO();

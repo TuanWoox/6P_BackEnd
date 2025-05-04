@@ -25,6 +25,17 @@ class LoanTypeInterestRatesDAO {
       throw err;
     }
   }
+
+  async getLoanTypeInterestRatesById(id) {
+    try {
+      const loanTypeInterest = await LoanTypeInterestRates.findById(
+        id
+      ).populate("loanType");
+      return loanTypeInterest;
+    } catch (err) {
+      throw err;
+    }
+  }
 }
 
 module.exports = new LoanTypeInterestRatesDAO();

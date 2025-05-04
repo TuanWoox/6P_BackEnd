@@ -45,4 +45,15 @@ router
     loanAccountController.updateAllLoanPayments
   );
 
+router
+  .route("/payments/create")
+  .post(
+    authMiddleware.authenticateToken,
+    loanAccountController.createLoanPayments
+  );
+
+router
+  .route("/loanTypeInterest/:id")
+  .get(loanAccountController.getLoanTypeInterestById);
+
 module.exports = router;
