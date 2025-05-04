@@ -81,19 +81,33 @@ class LoanAccountService {
   static async createLoanAccount(
     customerId,
     loanType,
-    loanTerm,
     loanAmount,
-    findResult
+    selectedLoanInterestRate
   ) {
-    const annualInterestRate = findResult.annualInterestRate;
-    const totalInterest = annualInterestRate * parseInt(loanAmount);
-    const totalPayment = parseInt(loanAmount) + totalInterest;
+    // console.log("customerId", customerId);
+    // console.log("loanType", loanType);
+    // console.log("loanTerm", loanTerm);
+    // console.log("loanAmount", loanAmount);
+    // console.log("selectedLoanInterestRate", selectedLoanInterestRate);
+    console.log("selectedLoanInterestRate", selectedLoanInterestRate);
 
+    const annualInterestRate = selectedLoanInterestRate.annualInterestRate;
+    const months = Number(selectedLoanInterestRate.termMonths);
+
+    // Tính tiền phải trả mỗi tháng
     const monthlyPayment = this.calculateMonthlyPayment(
       loanAmount,
-      annualInterestRate,
-      loanTerm
+      annualInterestRate
     );
+    // Tính tổng tiền lãi suất
+    const totalInterest = this.calculateTotalInterest(monthlyPayment, months);
+    // Tính tổng tiền phải trả
+    const totalPayment = this.calculateTotalPayment(loanAmount, totalInterest);
+
+    console.log("monthlyPayment", monthlyPayment);
+    console.log("totalInterest", totalInterest);
+    console.log("totalPayment", totalPayment);
+
     const accountLoanNumber = this.generateAccountNumber();
 
     try {
@@ -103,21 +117,36 @@ class LoanAccountService {
         balance: totalPayment,
         monthlyPayment: monthlyPayment,
         status: "PENDING",
-        loanTypeInterest: findResult._id,
+        loanTypeInterest: selectedLoanInterestRate._id,
       });
 
-      const result = await LoanAccountDAO.createLoanAccount(newLoanAccount);
+      const savedLoanAccount = await LoanAccountDAO.createLoanAccount(
+        newLoanAccount
+      );
+
+      const result = await LoanAccountDAO.getLoanAccountById(
+        savedLoanAccount._id
+      );
+
       return result;
     } catch (err) {
-      throw new Error("Internal Server Error");
+      throw new Error("loanAccountService: " + err.message);
     }
   }
 
-  static calculateMonthlyPayment(principal, annualRate, months) {
-    const monthlyRate = annualRate / 12 / 100;
-    return Math.round(
-      (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months))
-    );
+  static calculateMonthlyPayment(loanAmount, annualInterestRate) {
+    // Tính tiền lãi phải trả hàng tháng
+    return loanAmount * (annualInterestRate / 12);
+  }
+
+  static calculateTotalInterest(monthlyPayment, months) {
+    // Tính tổng tiền lãi phải trả
+    return monthlyPayment * months;
+  }
+
+  static calculateTotalPayment(loanAmount, totalInterest) {
+    // Tính tổng tiền phải trả
+    return Number(loanAmount) + Number(totalInterest);
   }
 
   static generateAccountNumber() {

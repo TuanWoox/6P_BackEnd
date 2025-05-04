@@ -62,16 +62,19 @@ module.exports.findLoanInterestRates = async (req, res) => {
 
 module.exports.createLoanAccount = async (req, res) => {
   const { customerId } = req.user;
-  const { loanType, loanTerm, loanAmount, findResult } = req.body;
+  const { loanType, loanAmount, selectedLoanInterestRate } = req.body;
+
+  // console.log("req.body", req.body);
 
   try {
     const result = await LoanAccountService.createLoanAccount(
       customerId,
       loanType,
-      loanTerm,
       loanAmount,
-      findResult
+      selectedLoanInterestRate
     );
+
+    console.log("result", result);
     return res.status(201).json(result);
   } catch (err) {
     return res.status(500).json({ message: err.message });
