@@ -7,7 +7,6 @@ const savingTypeInterestSchema = new Schema(
     monthlyInterestRate: { type: Number, default: 0 },
     annualInterestRate: { type: Number, required: true },
     dailyInterestRate: { type: Number, default: 0 },
-    percentMoneyLose0: { type: Number, required: true },
     savingType: {
       type: Schema.Types.ObjectId,
       ref: "SavingType",

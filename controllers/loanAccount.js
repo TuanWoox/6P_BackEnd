@@ -142,7 +142,6 @@ module.exports.createLoanAccount = async (req, res) => {
       accountNumber: accountLoanNumber,
       owner: customerId,
       balance: totalPayment,
-      monthlyPayment: monthlyPayment,
       status: "PENDING",
       loanTypeInterest: selectedLoanInterestRate._id,
     });
@@ -176,7 +175,7 @@ module.exports.confirmLoanPayment = async (req, res) => {
     ) {
       return res.status(400).json({ message: "Tài khoản nguồn không hợp lệ" });
     }
-    if (sourceAccountData.balance < amount) {
+    if (!sourceAccountData.hasSufficientBalance(amount)) {
       return res.status(400).json({ message: "Số dư không đủ để thanh toán" });
     }
 
@@ -186,15 +185,7 @@ module.exports.confirmLoanPayment = async (req, res) => {
         .status(404)
         .json({ message: "Không tìm thấy khoản thanh toán" });
     }
-
-    sourceAccountData.balance -= amount;
-    await CheckingAccountDAO.save(sourceAccountData);
-
-    if (loanPayment.amount - amount <= 0) {
-      loanPayment.status = "PAID";
-      loanPayment.paymentDate = new Date();
-    }
-    await LoanPaymentDAO.save(loanPayment);
+    sourceAccountData.payLoanFee(loanPayment, amount);
 
     const newTransaction = new Transaction({
       type: "TRANSFER",
@@ -204,7 +195,8 @@ module.exports.confirmLoanPayment = async (req, res) => {
       destinationAccountID: targetPayment,
       status: "Completed",
     });
-
+    await LoanPaymentDAO.save(loanPayment);
+    await CheckingAccountDAO.save(sourceAccountData);
     await transactionDAO.createTransfer(newTransaction);
 
     return res.status(200).json({

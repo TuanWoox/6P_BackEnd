@@ -10,21 +10,11 @@ const savingAccountSchema = new Schema(
       ref: "SavingTypeInterest",
       required: true,
     },
-    nextEarningDate: {
-      type: Date,
-      default: () => {
-        const now = new Date();
-        now.setMonth(now.getMonth() + 1);
-        return now;
-      },
-    },
+
     finishEarningDate: {
       type: Date,
     },
-    // totalEarning: {
-    //   type: Number,
-    //   default: 0,
-    // },
+
     status: {
       type: String,
       enum: [

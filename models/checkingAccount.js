@@ -15,8 +15,7 @@ const checkingAccountSchema = new Schema(
   { discriminatorKey: "accountType", timestamps: true }
 );
 checkingAccountSchema.methods.hasSufficientBalance = function (amount) {
-  const available =
-    this.balance + (this.overdraftProtection ? this.dailyTransactionLimit : 0);
+  const available = this.balance;
   return available >= amount;
 };
 checkingAccountSchema.methods.transferMoney = function (destAccount, amount) {
@@ -28,8 +27,13 @@ checkingAccountSchema.methods.depositSavingAccount = function (
   savingAccount,
   amount
 ) {
-  this.balance -= amount;
+  this.balance -= Number(amount);
   savingAccount.balance += amount;
+};
+checkingAccountSchema.methods.payLoanFee = function (toLoanPayment, amount) {
+  this.balance -= Number(amount);
+  toLoanPayment.status = "PAID";
+  toLoanPayment.paymentDate = new Date();
 };
 checkingAccountSchema.methods.updateDailyTransactionLimit = function (
   newLimit

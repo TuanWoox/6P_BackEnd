@@ -4,7 +4,6 @@ const Account = require("../models/account");
 
 const loanAccountSchema = new Schema(
   {
-    monthlyPayment: { type: Number, required: true },
     status: {
       type: String,
       enum: [
