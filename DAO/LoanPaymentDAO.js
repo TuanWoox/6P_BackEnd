@@ -32,7 +32,6 @@ class LoanPaymentDAO {
 
   async createPayment(paymentData) {
     try {
-      console.log("Payment Data:", paymentData);
       const payment = new LoanPayment(paymentData);
       return await payment.save();
     } catch (err) {

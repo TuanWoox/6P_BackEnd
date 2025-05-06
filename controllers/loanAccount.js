@@ -6,22 +6,24 @@ const CheckingAccountDAO = require("../DAO/CheckingAccountDAO");
 const Transaction = require("../models/transaction");
 const transactionDAO = require("../DAO/TransactionDAO");
 const LoanAccount = require("../models/loanAccount");
+const LoanPayment = require("../models/loanPayment");
 
 // Helper Functions
-function calculateMonthlyPayment(loanAmount, annualInterestRate) {
-  return loanAmount * (annualInterestRate / 12);
-}
-
-function calculateTotalInterest(monthlyPayment, months) {
-  return monthlyPayment * months;
-}
-
-function calculateTotalPayment(loanAmount, totalInterest) {
+function calculateLoanTotalPayment(loanAmount, annualInterestRate, months) {
+  const monthlyPayment = loanAmount * (annualInterestRate / 12);
+  const totalInterest = monthlyPayment * months;
   return Number(loanAmount) + Number(totalInterest);
 }
 
 function generateAccountNumber() {
   return Math.floor(Math.random() * 900000000000 + 100000000000).toString();
+}
+
+function calculateMonthlyPayment(amount, annualRate, termMonths) {
+  const monthlyRate = annualRate / 100 / 12;
+  const payment =
+    (amount * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -termMonths));
+  return Math.round(payment);
 }
 
 // CONTROLLERS
@@ -123,6 +125,40 @@ module.exports.findLoanInterestRates = async (req, res) => {
   }
 };
 
+module.exports.createLoanPayments = async (req, res) => {
+  // const { loanId } = req.params;
+  const { payments } = req.body; // Array of payments to be created
+
+  try {
+    if (!payments || !Array.isArray(payments) || payments.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Dữ liệu không hợp lệ để tạo thanh toán" });
+    }
+
+    const createdPayments = [];
+
+    for (const paymentData of payments) {
+      const payment = await LoanPaymentDAO.createPayment({
+        loan: paymentData.loan,
+        dueDate: paymentData.dueDate,
+        amount: paymentData.amount,
+        status: "PENDING",
+      });
+      createdPayments.push(payment);
+    }
+
+    return res.status(201).json({
+      message: "Tạo các khoản thanh toán thành công",
+      payments: createdPayments,
+    });
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ message: err.message || "Internal Server Error" });
+  }
+};
+
 module.exports.createLoanAccount = async (req, res) => {
   const { customerId } = req.user;
   const { loanType, loanAmount, selectedLoanInterestRate } = req.body;
@@ -130,19 +166,17 @@ module.exports.createLoanAccount = async (req, res) => {
   try {
     const annualInterestRate = selectedLoanInterestRate.annualInterestRate;
     const months = Number(selectedLoanInterestRate.termMonths);
-    const monthlyPayment = calculateMonthlyPayment(
+    const totalPayment = calculateLoanTotalPayment(
       loanAmount,
-      annualInterestRate
+      annualInterestRate,
+      months
     );
-    const totalInterest = calculateTotalInterest(monthlyPayment, months);
-    const totalPayment = calculateTotalPayment(loanAmount, totalInterest);
     const accountLoanNumber = generateAccountNumber();
 
     const newLoanAccount = new LoanAccount({
       accountNumber: accountLoanNumber,
       owner: customerId,
       balance: totalPayment,
-      monthlyPayment: monthlyPayment,
       status: "PENDING",
       loanTypeInterest: selectedLoanInterestRate._id,
     });
@@ -150,6 +184,21 @@ module.exports.createLoanAccount = async (req, res) => {
     const savedLoanAccount = await LoanAccountDAO.createLoanAccount(
       newLoanAccount
     );
+
+    // Tính toán khoản thanh toán hàng tháng
+    const monthlyPayment = calculateMonthlyPayment(
+      totalPayment,
+      annualInterestRate,
+      months
+    );
+
+    // Sử dụng phương thức model để tạo các khoản thanh toán
+    await savedLoanAccount.createLoanPayment(
+      new Date(),
+      months,
+      monthlyPayment
+    );
+
     const result = await LoanAccountDAO.getLoanAccountById(
       savedLoanAccount._id
     );
@@ -176,7 +225,7 @@ module.exports.confirmLoanPayment = async (req, res) => {
     ) {
       return res.status(400).json({ message: "Tài khoản nguồn không hợp lệ" });
     }
-    if (sourceAccountData.balance < amount) {
+    if (!sourceAccountData.hasSufficientBalance(amount)) {
       return res.status(400).json({ message: "Số dư không đủ để thanh toán" });
     }
 
@@ -186,15 +235,7 @@ module.exports.confirmLoanPayment = async (req, res) => {
         .status(404)
         .json({ message: "Không tìm thấy khoản thanh toán" });
     }
-
-    sourceAccountData.balance -= amount;
-    await CheckingAccountDAO.save(sourceAccountData);
-
-    if (loanPayment.amount - amount <= 0) {
-      loanPayment.status = "PAID";
-      loanPayment.paymentDate = new Date();
-    }
-    await LoanPaymentDAO.save(loanPayment);
+    sourceAccountData.payLoanFee(loanPayment, amount);
 
     const newTransaction = new Transaction({
       type: "TRANSFER",
@@ -204,7 +245,8 @@ module.exports.confirmLoanPayment = async (req, res) => {
       destinationAccountID: targetPayment,
       status: "Completed",
     });
-
+    await LoanPaymentDAO.save(loanPayment);
+    await CheckingAccountDAO.save(sourceAccountData);
     await transactionDAO.createTransfer(newTransaction);
 
     return res.status(200).json({
@@ -280,41 +322,6 @@ module.exports.getLoanTypeInterestById = async (req, res) => {
     }
     return res.status(200).json(interest);
   } catch (err) {
-    return res
-      .status(500)
-      .json({ message: err.message || "Internal Server Error" });
-  }
-};
-module.exports.createLoanPayments = async (req, res) => {
-  // const { loanId } = req.params;
-  const { payments } = req.body; // Array of payments to be created
-
-  try {
-    if (!payments || !Array.isArray(payments) || payments.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Dữ liệu không hợp lệ để tạo thanh toán" });
-    }
-
-    const createdPayments = [];
-
-    for (const paymentData of payments) {
-      const payment = await LoanPaymentDAO.createPayment({
-        loan: paymentData.loan,
-        dueDate: paymentData.dueDate,
-        amount: paymentData.amount,
-        status: "PENDING",
-      });
-      createdPayments.push(payment);
-    }
-    console.log("Tạo các khoản thanh toán thành công:", createdPayments);
-
-    return res.status(201).json({
-      message: "Tạo các khoản thanh toán thành công",
-      payments: createdPayments,
-    });
-  } catch (err) {
-    console.log("Lỗi trong createLoanPayments:", err.message);
     return res
       .status(500)
       .json({ message: err.message || "Internal Server Error" });

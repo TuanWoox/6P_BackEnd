@@ -3,6 +3,7 @@ const OTPDAO = require("../DAO/OTPDAO");
 const OTP = require("../models/OTP");
 const sendMail = require("../nodemailer/sendMail");
 const { generateOTPToken } = require("../utils/utils");
+const COOKIE_OPTIONS = require("../config/cookieOptions");
 
 module.exports.createOTP = async (req, res, next) => {
   const { email, type } = req.body;
@@ -67,12 +68,7 @@ module.exports.verifyOTP = async (req, res, next) => {
     await OTPDAO.deleteById(foundOTP._id);
 
     // Set OTPToken as a cookie
-    res.cookie("OTPToken", newOTPToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 1 * 120 * 1000, // 2 minutes expiration
-    });
+    res.cookie("OTPToken", newOTPToken, COOKIE_OPTIONS.otp);
 
     return res.status(200).json({ message: "Xác minh OTP thành công!" });
   } catch (err) {
