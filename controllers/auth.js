@@ -5,6 +5,7 @@ const AuthDAO = require("../DAO/AuthDAO");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { generateAccessToken, generateRefreshToken } = require("../utils/utils");
+const COOKIE_OPTIONS = require("../config/cookieOptions");
 
 module.exports.signUp = async (req, res) => {
   try {
@@ -107,21 +108,11 @@ module.exports.login = async (req, res) => {
     const refreshToken = generateRefreshToken(customer);
     await AuthDAO.storeRefreshToken(customer, refreshToken);
 
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      path: "/",
-    });
+    res.cookie("accessToken", accessToken, COOKIE_OPTIONS.normal);
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      path: "/",
-    });
+    res.cookie("refreshToken", refreshToken, COOKIE_OPTIONS.normal);
 
-    res.clearCookie("OTPToken", { path: "/" });
+    res.clearCookie("OTPToken", COOKIE_OPTIONS.otp);
 
     return res.status(200).json({ message: "Login Successfully" });
   } catch (err) {
@@ -148,12 +139,7 @@ module.exports.refreshToken = async (req, res) => {
       }
 
       const newAccessToken = generateAccessToken(user);
-      res.cookie("accessToken", newAccessToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        path: "/",
-      });
+      res.cookie("accessToken", newAccessToken, COOKIE_OPTIONS.normal);
       return res.status(200).json({ message: "Token refreshed successfully" });
     });
   } catch {
@@ -167,8 +153,8 @@ module.exports.logout = async (req, res) => {
     const token = req.cookies.refreshToken;
     if (token) await AuthDAO.deleteRefreshToken(token);
 
-    res.clearCookie("accessToken", { path: "/" });
-    res.clearCookie("refreshToken", { path: "/" });
+    res.clearCookie("accessToken", COOKIE_OPTIONS.normal);
+    res.clearCookie("refreshToken", COOKIE_OPTIONS.normal);
 
     return res.status(200).json({ message: "Đăng xuất thành công" });
   } catch {
@@ -178,16 +164,9 @@ module.exports.logout = async (req, res) => {
 
 module.exports.validateJWT = async (req, res) => {
   const token = req.cookies.accessToken;
-  const refreshToken = req.cookies.refreshToken;
 
   if (!token) {
-    res.clearCookie("accessToken", { path: "/" });
-    return res
-      .status(401)
-      .json({ message: "Unauthorized - No token provided" });
-  }
-  if (!refreshToken) {
-    res.clearCookie("refreshToken", { path: "/" });
+    res.clearCookie("accessToken", COOKIE_OPTIONS.normal);
     return res
       .status(401)
       .json({ message: "Unauthorized - No token provided" });
