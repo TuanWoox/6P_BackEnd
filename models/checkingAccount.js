@@ -30,11 +30,13 @@ checkingAccountSchema.methods.depositSavingAccount = function (
   this.balance -= Number(amount);
   savingAccount.balance += amount;
 };
+
 checkingAccountSchema.methods.payLoanFee = function (toLoanPayment, amount) {
   this.balance -= Number(amount);
   toLoanPayment.status = "PAID";
   toLoanPayment.paymentDate = new Date();
 };
+
 checkingAccountSchema.methods.updateDailyTransactionLimit = function (
   newLimit
 ) {
