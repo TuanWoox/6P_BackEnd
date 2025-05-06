@@ -49,7 +49,6 @@ module.exports.getAllSavingInterestRates = async (req, res) => {
       await SavingTypeInterestDAO.getAllSavingTypeInterest();
     return res.status(200).json(savingInterestRates);
   } catch (err) {
-    console.log(err);
     return res.status(500).json({ message: err.message });
   }
 };
@@ -179,7 +178,6 @@ module.exports.withdrawSaving = async (req, res) => {
       ...withdrawalDetails,
     });
   } catch (err) {
-    console.log(err);
     return res.status(500).json({ message: err.message });
   }
 };

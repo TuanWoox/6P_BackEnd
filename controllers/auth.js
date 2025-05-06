@@ -37,7 +37,6 @@ module.exports.checkAccount = async (req, res) => {
 
     return res.status(200).json({ message: "Email và mật khẩu hợp lệ" });
   } catch (err) {
-    console.log(err);
     return res.status(500).json({ message: "Lỗi máy chủ nội bộ" });
   }
 };
@@ -120,7 +119,6 @@ module.exports.login = async (req, res) => {
       sameSite: "none",
       path: "/auth",
     });
-    console.log("Hi");
 
     res.clearCookie("OTPToken", { path: "/" });
 

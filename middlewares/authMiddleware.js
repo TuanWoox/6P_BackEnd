@@ -9,8 +9,6 @@ module.exports.authenticateToken = (req, res, next) => {
 
   jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
     if (err) {
-      res.clearCookie("accessToken", { path: "/" });
-
       // Check if refresh token exists before proceeding
       if (!req.cookies.refreshToken) {
         return res.status(401).json({ message: "No refresh token available" });

@@ -307,14 +307,12 @@ module.exports.createLoanPayments = async (req, res) => {
       });
       createdPayments.push(payment);
     }
-    console.log("Tạo các khoản thanh toán thành công:", createdPayments);
 
     return res.status(201).json({
       message: "Tạo các khoản thanh toán thành công",
       payments: createdPayments,
     });
   } catch (err) {
-    console.log("Lỗi trong createLoanPayments:", err.message);
     return res
       .status(500)
       .json({ message: err.message || "Internal Server Error" });

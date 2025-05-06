@@ -44,7 +44,6 @@ class SavingAccountDAO {
       ]);
       return accounts;
     } catch (err) {
-      console.log(err);
       throw err;
     }
   }
