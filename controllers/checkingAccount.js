@@ -89,8 +89,17 @@ module.exports.transferMoney = async (req, res) => {
         .status(400)
         .json({ message: "Invalid or inactive destination account" });
     }
+    const alreadyTransferredToday = await transactionDAO.sumTodayTransfers(
+      currentAccount.accountNumber
+    );
+    const dailyLimit = currentAccount.dailyTransactionLimit;
 
-    if (!currentAccount.hasSufficientBalance(amount)) {
+    const remainingDailyLimit = dailyLimit - alreadyTransferredToday;
+
+    if (
+      !currentAccount.hasSufficientBalance(amount) ||
+      amount > remainingDailyLimit
+    ) {
       return res.status(400).json({ message: "Insufficient funds" });
     }
 
