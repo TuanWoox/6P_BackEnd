@@ -66,5 +66,9 @@ userSchema.post("save", async function (user, next) {
 userSchema.methods.changePassword = function (newPassword) {
   this.password = newPassword;
 };
+userSchema.methods.login = function (password) {
+  const isMatch = bcrypt.compare(password, user.password);
+  return isMatch;
+};
 
 module.exports = mongoose.model("User", userSchema);

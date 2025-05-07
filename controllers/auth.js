@@ -4,13 +4,15 @@ const CustomerDAO = require("../DAO/CustomerDAO");
 const AuthDAO = require("../DAO/AuthDAO");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const UserDAO = require("../DAO/UserDAO");
 const { generateAccessToken, generateRefreshToken } = require("../utils/utils");
 const COOKIE_OPTIONS = require("../config/cookieOptions");
+const RefreshTokenDAO = require("../DAO/RefreshTokenDAO");
 
 module.exports.signUp = async (req, res) => {
   try {
     const newCustomer = new Customer(req.body.customer);
-    await CustomerDAO.createCustomer(newCustomer);
+    await CustomerDAO.saveCustomer(newCustomer);
     return res.status(201).json({ message: "Tạo tài khoản thành công" });
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -23,13 +25,12 @@ module.exports.checkAccount = async (req, res) => {
     return res.status(400).json({ message: "Email và mật khẩu là bắt buộc" });
 
   try {
-    const user = await AuthDAO.login(email, password);
+    const user = await UserDAO.findUserByEmail(email);
     if (!user)
       return res
         .status(401)
         .json({ message: "Thông tin đăng nhập không chính xác" });
-
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = user.login(password);
     if (!isMatch) {
       return res
         .status(401)
@@ -100,13 +101,13 @@ module.exports.login = async (req, res) => {
     return res.status(401).json({ message: "Forbidden" });
 
   try {
-    const customer = await AuthDAO.login(email, password);
-    const isMatch = await bcrypt.compare(password, customer.password);
+    const user = await UserDAO.findUserByEmail(email);
+    const isMatch = user.login(password);
     if (!isMatch) throw new Error("Thông tin đăng nhập không chính xác");
 
-    const accessToken = generateAccessToken(customer);
-    const refreshToken = generateRefreshToken(customer);
-    await AuthDAO.storeRefreshToken(customer, refreshToken);
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+    await RefreshTokenDAO.storeRefreshToken(refreshToken);
 
     res.cookie("accessToken", accessToken, COOKIE_OPTIONS.normal);
 
@@ -129,7 +130,7 @@ module.exports.refreshToken = async (req, res) => {
     return res.status(401).json({ message: "Bạn không được xác thực" });
 
   try {
-    const found = await AuthDAO.fetchRefreshToken(token);
+    const found = await RefreshTokenDAO.fetchRefreshToken(token);
     if (!found) throw new Error("Invalid refresh token");
 
     jwt.verify(token, process.env.JWT_REFRESH_SECRET_KEY, (err, user) => {
@@ -151,7 +152,7 @@ module.exports.refreshToken = async (req, res) => {
 module.exports.logout = async (req, res) => {
   try {
     const token = req.cookies.refreshToken;
-    if (token) await AuthDAO.deleteRefreshToken(token);
+    if (token) await RefreshTokenDAO.deleteRefreshToken(token);
 
     res.clearCookie("accessToken", COOKIE_OPTIONS.normal);
     res.clearCookie("refreshToken", COOKIE_OPTIONS.normal);

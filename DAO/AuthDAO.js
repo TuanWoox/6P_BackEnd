@@ -24,7 +24,7 @@ class AuthDAO {
       throw err; // Re-throw the error for handling upstream
     }
   }
-  async login(email, password) {
+  async getAccount(email) {
     try {
       const foundCustomer = await Customer.findOne({ email });
       if (!foundCustomer) {
@@ -36,39 +36,7 @@ class AuthDAO {
       throw err; // Re-throw the error for handling upstream
     }
   }
-  async storeRefreshToken(customerId, refreshToken) {
-    try {
-      // First delete any existing tokens for this user
-      await RefreshToken.deleteMany({ customerId });
 
-      // Then create the new token
-      const refresh = new RefreshToken({
-        customerId,
-        value: refreshToken,
-      });
-      await refresh.save();
-    } catch (err) {
-      throw err;
-    }
-  }
-  async fetchRefreshToken(refreshToken) {
-    try {
-      const foundRefreshToken = await RefreshToken.findOne({
-        value: refreshToken,
-      });
-      if (!foundRefreshToken) return null;
-      return foundRefreshToken;
-    } catch (err) {
-      throw err;
-    }
-  }
-  async deleteRefreshToken(refreshToken) {
-    try {
-      await RefreshToken.deleteOne({ value: refreshToken });
-    } catch (err) {
-      throw err;
-    }
-  }
   async changePassword(customerId, oldPassword, newPassword) {
     try {
       const foundCustomer = await Customer.findById(customerId);
