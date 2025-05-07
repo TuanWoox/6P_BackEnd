@@ -235,16 +235,8 @@ module.exports.confirmLoanPayment = async (req, res) => {
         .status(404)
         .json({ message: "Không tìm thấy khoản thanh toán" });
     }
-    sourceAccountData.payLoanFee(loanPayment, amount);
+    const newTransaction = sourceAccountData.payLoanFee(loanPayment, amount);
 
-    const newTransaction = new Transaction({
-      type: "TRANSFER",
-      amount: amount,
-      description: `Thanh toán khoản vay ${loanPayment.loan}`,
-      sourceAccountID: sourceAccount,
-      destinationAccountID: targetPayment,
-      status: "Completed",
-    });
     await LoanPaymentDAO.save(loanPayment);
     await CheckingAccountDAO.save(sourceAccountData);
     await transactionDAO.createTransfer(newTransaction);

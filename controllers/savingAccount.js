@@ -75,7 +75,6 @@ module.exports.createSavingAccount = async (req, res) => {
   const { savingTypeInterest, balance, accountNumber } = req.body;
   const { customerId } = req.user;
   try {
-    // Validate checking account ownership
     const checkingAccount = await CheckingAccountDAO.getByAccountNumber(
       accountNumber
     );
@@ -85,61 +84,29 @@ module.exports.createSavingAccount = async (req, res) => {
         .json({ message: "Unauthorized or invalid account" });
     }
 
-    // Check for sufficient balance
     if (!checkingAccount.hasSufficientBalance(balance)) {
       return res.status(400).json({ message: "Insufficient funds" });
     }
 
-    // Retrieve and validate saving type
     const savingType = await SavingTypeInterestDAO.getSavingTypeInterestById(
       savingTypeInterest
     );
     if (!savingType) {
       return res.status(400).json({ message: "Saving type not found" });
     }
-
-    // Determine interest dates
-    const now = new Date();
-    let nextEarningDate = new Date(now);
-    let finishEarningDate = null;
-
-    if (savingType.maturityPeriod === 0) {
-      nextEarningDate.setDate(now.getDate() + 1);
-    } else {
-      nextEarningDate.setMonth(now.getMonth() + 1);
-      finishEarningDate = new Date(now);
-      finishEarningDate.setMonth(now.getMonth() + savingType.maturityPeriod);
-    }
-
-    // Create saving account
-    const newAccountNumber = await generateUniqueAccountNumber();
-    const newSavingAccount = new SavingAccount({
-      accountNumber: newAccountNumber,
-      owner: customerId,
-      balance: 0,
-      savingTypeInterest,
-      nextEarningDate,
-      finishEarningDate,
+    const newSavingAccount = await SavingAccount.createSavingAccount({
+      customerId,
+      savingType,
     });
 
-    // Perform deposit
-    checkingAccount.depositSavingAccount(newSavingAccount, balance);
-
-    // Create transaction record
-    const transaction = new Transaction({
-      type: "DEPOSIT",
-      amount: balance,
-      description: `Tạo tài khoản tiết kiệm ${newSavingAccount.accountNumber}`,
-      sourceAccountID: checkingAccount.accountNumber,
-      destinationAccountID: newSavingAccount.accountNumber,
-      status: "Completed",
-    });
-
-    // Persist changes
+    const transaction = await checkingAccount.depositSavingAccount(
+      newSavingAccount,
+      balance
+    );
     await Promise.all([
-      SavingAccountDAO.createSavingAccount(newSavingAccount),
+      SavingAccountDAO.save(newSavingAccount),
       CheckingAccountDAO.save(checkingAccount),
-      TransactionDAO.createTransfer(transaction),
+      TransactionDAO.save(transaction),
     ]);
 
     return res.status(201).json({

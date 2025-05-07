@@ -95,16 +95,11 @@ module.exports.transferMoney = async (req, res) => {
     }
 
     // Perform the transfer
-    currentAccount.transferMoney(destAccount, amount);
-
-    const newTransaction = new Transaction({
-      type: "TRANSFER",
+    const newTransaction = currentAccount.transferMoney(
+      destAccount,
       amount,
-      description,
-      sourceAccountID: currentAccount.accountNumber,
-      destinationAccountID: destAccount.accountNumber,
-      status: "Completed",
-    });
+      description
+    );
 
     // Save both account changes and transaction
     await Promise.all([

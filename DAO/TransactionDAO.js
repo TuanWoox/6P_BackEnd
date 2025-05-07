@@ -32,6 +32,13 @@ class TransactionDAO {
       throw error;
     }
   }
+  async save(transaction) {
+    try {
+      return await transaction.save();
+    } catch (err) {
+      throw err;
+    }
+  }
   async sumTodayTransfers(accountNumber) {
     // Build start-of-day timestamp in server’s timezone
     const startOfDay = new Date();

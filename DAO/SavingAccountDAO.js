@@ -47,6 +47,13 @@ class SavingAccountDAO {
       throw err;
     }
   }
+  async save(savingAccount) {
+    try {
+      return await savingAccount.save();
+    } catch (err) {
+      throw err;
+    }
+  }
 }
 
 module.exports = new SavingAccountDAO();
