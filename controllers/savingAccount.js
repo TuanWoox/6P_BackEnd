@@ -79,20 +79,20 @@ module.exports.createSavingAccount = async (req, res) => {
       accountNumber
     );
     if (!checkingAccount || checkingAccount.owner.toString() !== customerId) {
-      return res
-        .status(400)
-        .json({ message: "Unauthorized or invalid account" });
+      return res.status(400).json({
+        message: "Bạn không có quyền truy cập hoặc tài khoản không hợp lí",
+      });
     }
 
     if (!checkingAccount.hasSufficientBalance(balance)) {
-      return res.status(400).json({ message: "Insufficient funds" });
+      return res.status(400).json({ message: "Số tiền không hợp lí" });
     }
 
     const savingType = await SavingTypeInterestDAO.getSavingTypeInterestById(
       savingTypeInterest
     );
     if (!savingType) {
-      return res.status(400).json({ message: "Saving type not found" });
+      return res.status(400).json({ message: "Loại tiết kiệm không tìm thấy" });
     }
     const newSavingAccount = await SavingAccount.createSavingAccount({
       customerId,

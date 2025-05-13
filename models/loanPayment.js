@@ -29,6 +29,27 @@ const loanPaymentSchema = new Schema({
     default: 0,
   },
 });
+loanPaymentSchema.methods.updatePaymentStatus = function (
+  currentDate = new Date()
+) {
+  if (this.status === "PAID") {
+    return false; // No update needed
+  }
+
+  if (this.dueDate < currentDate) {
+    this.status = "OVERDUE";
+    this.overdueDays = Math.floor(
+      (currentDate - this.dueDate) / (1000 * 60 * 60 * 24)
+    );
+  } else {
+    this.status = "PENDING";
+    this.overdueDays = Math.floor(
+      (this.dueDate - currentDate) / (1000 * 60 * 60 * 24)
+    );
+  }
+
+  return true; // Indicate that status was updated
+};
 
 const LoanPayment = mongoose.model("LoanPayment", loanPaymentSchema);
 

@@ -20,6 +20,9 @@ class OTPDAO {
   async deleteById(id) {
     return OTP.deleteOne({ _id: id });
   }
+  async deleteOTPByEmail(email) {
+    return await OTP.deleteMany({ email });
+  }
 }
 
 module.exports = new OTPDAO();

@@ -49,7 +49,7 @@ module.exports.verifyOTP = async (req, res) => {
     const newOTPToken = generateOTPToken(foundOTP.email);
 
     // Delete OTP after successful verification
-    await OTPDAO.deleteById(foundOTP._id);
+    await OTPDAO.deleteOTPByEmail(foundOTP.email);
 
     // Set the token in a cookie
     res.cookie("OTPToken", newOTPToken, COOKIE_OPTIONS.otp);

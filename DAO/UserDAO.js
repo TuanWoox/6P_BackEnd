@@ -3,10 +3,16 @@ const User = require("../models/user");
 class UserDao {
   async findUserByEmail(email) {
     try {
-      const foundUser = await User.findOne({ email: email });
-      return foundUser;
+      return await User.findOne({ email });
     } catch (err) {
       throw err;
+    }
+  }
+  async getUserByNameNationalIdAndEmail(fullName, nationalID, email) {
+    try {
+      return await Customer.findOne({ fullName, nationalID, email });
+    } catch (err) {
+      throw err; // Re-throw the error for handling upstream
     }
   }
 }

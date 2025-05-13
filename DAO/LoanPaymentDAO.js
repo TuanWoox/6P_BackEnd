@@ -1,4 +1,3 @@
-const mongoose = require("mongoose");
 const LoanPayment = require("../models/loanPayment");
 
 class LoanPaymentDAO {
@@ -8,6 +7,13 @@ class LoanPaymentDAO {
         loan: loanAccountId,
       });
       return loanPayments;
+    } catch (err) {
+      throw err;
+    }
+  }
+  async createPayments(paymentsDataArray) {
+    try {
+      return await LoanPayment.insertMany(paymentsDataArray);
     } catch (err) {
       throw err;
     }
@@ -24,16 +30,7 @@ class LoanPaymentDAO {
 
   async save(loanPaymentInstance) {
     try {
-      return loanPaymentInstance.save();
-    } catch (err) {
-      throw err;
-    }
-  }
-
-  async createPayment(paymentData) {
-    try {
-      const payment = new LoanPayment(paymentData);
-      return await payment.save();
+      return await loanPaymentInstance.save();
     } catch (err) {
       throw err;
     }

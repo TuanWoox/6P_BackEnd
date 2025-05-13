@@ -30,7 +30,7 @@ checkingAccountSchema.methods.transferMoney = function (
     type: "TRANSFER",
     amount,
     description,
-    sourceAccountID: currentAccount.accountNumber,
+    sourceAccountID: this.accountNumber,
     destinationAccountID: destAccount.accountNumber,
     status: "Completed",
   });
@@ -61,7 +61,7 @@ checkingAccountSchema.methods.payLoanFee = function (toLoanPayment, amount) {
     type: "TRANSFER",
     amount: amount,
     description: `Thanh toán khoản vay ${toLoanPayment.loan}`,
-    sourceAccountID: sourceAccount,
+    sourceAccountID: this.accountNumber,
     destinationAccountID: toLoanPayment.loan,
     status: "Completed",
   });

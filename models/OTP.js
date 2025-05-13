@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const OTPDAO = require("../DAO/OTPDAO");
 
 const otpSchema = new Schema({
   otp: {
@@ -30,6 +29,7 @@ otpSchema.methods.isExpired = function () {
 };
 
 otpSchema.statics.generateOTP = async function (email, type) {
+  const OTPDAO = require("../DAO/OTPDAO");
   const existingOtp = await OTPDAO.hasValidOTP(email);
   if (existingOtp) {
     throw new Error("EXISTING_VALID_OTP");
