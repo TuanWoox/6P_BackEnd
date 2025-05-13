@@ -83,7 +83,7 @@ module.exports.changePassword = async (req, res, next) => {
       return res.status(400).json({ message: "Mật khẩu hiện tại không đúng" });
 
     customer.changePassword(newPassword);
-    await customer.save();
+    await CustomerDAO.save(customer);
 
     return res.status(200).json({ message: "Thay đổi mật khẩu thành công" });
   } catch (e) {
