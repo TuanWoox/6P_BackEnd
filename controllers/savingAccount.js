@@ -123,23 +123,37 @@ module.exports.withdrawSaving = async (req, res) => {
   const { customerId } = req.user;
 
   try {
+    // Lấy sổ tiết kiệm và kiểm tra trạng thái
     const saving = await SavingAccountDAO.getSavingAccountById(accountId);
-    if (!saving || saving.status !== "ACTIVE") {
+    if (!saving) {
+      return res.status(404).json({ message: "Không tìm thấy sổ tiết kiệm." });
+    }
+    if (saving.status !== "ACTIVE") {
       return res
         .status(400)
-        .json({ message: "Sổ tiết kiệm không tồn tại hoặc đã tất toán." });
+        .json({ message: "Sổ tiết kiệm đã tất toán hoặc không hợp lệ." });
     }
 
+    // Lấy tài khoản thanh toán
     const checkingAccount = await CheckingAccountDAO.getCheckingAccount(
       customerId
     );
     if (!checkingAccount) {
       return res
-        .status(400)
-        .json({ message: "Tài khoản thanh toán không tồn tại." });
+        .status(404)
+        .json({ message: "Không tìm thấy tài khoản thanh toán." });
     }
 
+    // Thực hiện tất toán
     const withdrawalDetails = await saving.withdraw(checkingAccount);
+
+    // Lưu các thay đổi đồng thời
+    await Promise.all([
+      TransactionDAO.save(withdrawalDetails),
+      CheckingAccountDAO.save(checkingAccount),
+      SavingAccountDAO.save(saving),
+    ]);
+
     return res.status(200).json({
       message: "Tất toán thành công",
       ...withdrawalDetails,

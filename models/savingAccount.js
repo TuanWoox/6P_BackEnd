@@ -110,9 +110,8 @@ savingAccountSchema.methods.withdraw = async function (checkingAccount) {
   });
 
   await transaction.validate();
-  await Promise.all([checkingAccount.save(), this.save(), transaction.save()]);
 
-  return withdrawalDetails;
+  return transaction;
 };
 savingAccountSchema.statics.createSavingAccount = async function ({
   customerId,
