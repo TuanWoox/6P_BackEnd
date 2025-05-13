@@ -3,7 +3,6 @@ const LoanTypeInterestRates = require("../models/loanTypeInterestRates");
 class LoanTypeInterestRatesDAO {
   async getAllLoanTypeInterestRates() {
     try {
-      // Lấy tất cả các document trong collection LoanTypeInterestRates
       const interestRates = await LoanTypeInterestRates.find().populate(
         "loanType"
       );
@@ -15,7 +14,6 @@ class LoanTypeInterestRatesDAO {
 
   async getLoanTypeInterestRatesByloanTypeAndloanTerm(loanType, loanTerm) {
     try {
-      // Tìm kiếm theo loanType và termMonths (loanTerm)
       const interestRate = await LoanTypeInterestRates.findOne({
         loanType: loanType,
         termMonths: Number(loanTerm),

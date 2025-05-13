@@ -18,7 +18,7 @@ router
 
 router
   .route("/checkAvilableTargetAccount/:targetAccount")
-  .get(checkingAccountController.checkAvilableTargetAccount);
+  .get(checkingAccountController.checkAvailableTargetAccount);
 
 router
   .route("/setLimitTransaction")

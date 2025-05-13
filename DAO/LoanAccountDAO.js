@@ -27,11 +27,11 @@ class LoanAccountDAO {
     }
   }
 
-  async createLoanAccount(loanAccountInstance) {
+  async save(loanAccountInstance) {
     try {
       return await loanAccountInstance.save();
     } catch (err) {
-      console.error("Lỗi trong DAO (createLoanAccount):", error.message);
+      console.error("Lỗi trong DAO (createLoanAccount):", err.message);
       throw err;
     }
   }

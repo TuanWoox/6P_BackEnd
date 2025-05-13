@@ -1,17 +1,6 @@
-const savingType = require("../models/savingType");
-const SavingTypeInterest = require("../models/savingTypeInterest");
 const SavingAccount = require("../models/savingAccount");
-const { generateUniqueAccountNumber } = require("../utils/utils");
 
 class SavingAccountDAO {
-  async createSavingAccount(savingAccountInstace) {
-    try {
-      await savingAccountInstace.save();
-    } catch (error) {
-      throw error;
-    }
-  }
-
   async getSavingAccountById(accountId) {
     try {
       const foundAccount = await SavingAccount.findById(accountId).populate([
@@ -43,6 +32,13 @@ class SavingAccountDAO {
         },
       ]);
       return accounts;
+    } catch (err) {
+      throw err;
+    }
+  }
+  async save(savingAccount) {
+    try {
+      return await savingAccount.save();
     } catch (err) {
       throw err;
     }

@@ -3,30 +3,8 @@ const LoanPaymentDAO = require("../DAO/LoanPaymentDAO");
 const LoanTypeDAO = require("../DAO/LoanTypeDAO");
 const LoanTypeInterestRatesDAO = require("../DAO/LoanTypeInterestRatesDAO");
 const CheckingAccountDAO = require("../DAO/CheckingAccountDAO");
-const Transaction = require("../models/transaction");
-const transactionDAO = require("../DAO/TransactionDAO");
+const TransactionDAO = require("../DAO/TransactionDAO");
 const LoanAccount = require("../models/loanAccount");
-const LoanPayment = require("../models/loanPayment");
-
-// Helper Functions
-function calculateLoanTotalPayment(loanAmount, annualInterestRate, months) {
-  const monthlyPayment = loanAmount * (annualInterestRate / 12);
-  const totalInterest = monthlyPayment * months;
-  return Number(loanAmount) + Number(totalInterest);
-}
-
-function generateAccountNumber() {
-  return Math.floor(Math.random() * 900000000000 + 100000000000).toString();
-}
-
-function calculateMonthlyPayment(amount, annualRate, termMonths) {
-  const monthlyRate = annualRate / 100 / 12;
-  const payment =
-    (amount * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -termMonths));
-  return Math.round(payment);
-}
-
-// CONTROLLERS
 
 module.exports.getAllLoanAccounts = async (req, res) => {
   const { customerId } = req.user;
@@ -161,64 +139,49 @@ module.exports.createLoanPayments = async (req, res) => {
 
 module.exports.createLoanAccount = async (req, res) => {
   const { customerId } = req.user;
-  const { loanType, loanAmount, selectedLoanInterestRate } = req.body;
+  const { loanAmount, selectedLoanInterestRate: fromReqest } = req.body;
 
   try {
-    const annualInterestRate = selectedLoanInterestRate.annualInterestRate;
-    const months = Number(selectedLoanInterestRate.termMonths);
-    const totalPayment = calculateLoanTotalPayment(
-      loanAmount,
-      annualInterestRate,
-      months
-    );
-    const accountLoanNumber = generateAccountNumber();
+    // Fetch the interest rate object from DB for security
+    const selectedLoanInterestRate =
+      await LoanTypeInterestRatesDAO.getLoanTypeInterestRatesById(
+        fromReqest._id
+      );
 
-    const newLoanAccount = new LoanAccount({
-      accountNumber: accountLoanNumber,
-      owner: customerId,
-      balance: totalPayment,
-      status: "PENDING",
-      loanTypeInterest: selectedLoanInterestRate._id,
-    });
+    if (!selectedLoanInterestRate) {
+      return res
+        .status(400)
+        .json({ message: "Không tìm thấy loại lãi suất vay" });
+    }
 
-    const savedLoanAccount = await LoanAccountDAO.createLoanAccount(
-      newLoanAccount
-    );
-
-    // Tính toán khoản thanh toán hàng tháng
-    const monthlyPayment = calculateMonthlyPayment(
-      totalPayment,
-      annualInterestRate,
-      months
-    );
-
-    // Sử dụng phương thức model để tạo các khoản thanh toán
-    await savedLoanAccount.createLoanPayment(
-      new Date(),
-      months,
-      monthlyPayment
-    );
-
-    const result = await LoanAccountDAO.getLoanAccountById(
-      savedLoanAccount._id
-    );
+    const { newLoanAccount, paymentsData } =
+      await LoanAccount.createNewLoanAccount(
+        customerId,
+        loanAmount,
+        selectedLoanInterestRate
+      );
+    console.log(paymentsData);
+    const result = await LoanAccountDAO.save(newLoanAccount);
+    const payments = await LoanPaymentDAO.createPayments(paymentsData);
 
     return res.status(201).json(result);
   } catch (err) {
+    console.log(err);
     return res
       .status(500)
-      .json({ message: err.message || "Internal Server Error" });
+      .json({ message: err.message || "Lỗi máy chủ nội bộ" });
   }
 };
 
 module.exports.confirmLoanPayment = async (req, res) => {
   const { customerId } = req.user;
   const { sourceAccount, targetPayment, amount } = req.body;
-
+  console.log(req.body);
   try {
     const sourceAccountData = await CheckingAccountDAO.getByAccountNumber(
       sourceAccount
     );
+
     if (
       !sourceAccountData ||
       sourceAccountData.owner.toString() !== customerId
@@ -235,19 +198,11 @@ module.exports.confirmLoanPayment = async (req, res) => {
         .status(404)
         .json({ message: "Không tìm thấy khoản thanh toán" });
     }
-    sourceAccountData.payLoanFee(loanPayment, amount);
+    const newTransaction = sourceAccountData.payLoanFee(loanPayment, amount);
 
-    const newTransaction = new Transaction({
-      type: "TRANSFER",
-      amount: amount,
-      description: `Thanh toán khoản vay ${loanPayment.loan}`,
-      sourceAccountID: sourceAccount,
-      destinationAccountID: targetPayment,
-      status: "Completed",
-    });
     await LoanPaymentDAO.save(loanPayment);
     await CheckingAccountDAO.save(sourceAccountData);
-    await transactionDAO.createTransfer(newTransaction);
+    await TransactionDAO.save(newTransaction);
 
     return res.status(200).json({
       message: "Thanh toán khoản vay thành công",
@@ -255,6 +210,7 @@ module.exports.confirmLoanPayment = async (req, res) => {
       paymentStatus: loanPayment.status,
     });
   } catch (err) {
+    console.log(err);
     return res
       .status(500)
       .json({ message: err.message || "Internal Server Error" });
@@ -272,6 +228,7 @@ module.exports.updateAllLoanPayments = async (req, res) => {
     const loanPayments = await LoanPaymentDAO.getAllLoanPaymentsByLoanAccountId(
       loanId
     );
+
     if (!loanPayments || loanPayments.length === 0) {
       return res
         .status(404)
@@ -282,30 +239,22 @@ module.exports.updateAllLoanPayments = async (req, res) => {
     const updatedPayments = [];
 
     for (const payment of loanPayments) {
-      if (payment.status !== "PAID") {
-        if (payment.dueDate < currentDate) {
-          payment.status = "OVERDUE";
-          payment.overdueDays = Math.floor(
-            (currentDate - payment.dueDate) / (1000 * 60 * 60 * 24)
-          );
-        } else {
-          payment.status = "PENDING";
-          payment.overdueDays = Math.floor(
-            (payment.dueDate - currentDate) / (1000 * 60 * 60 * 24)
-          );
-        }
+      const updated = payment.updatePaymentStatus(currentDate);
+
+      if (updated) {
         await LoanPaymentDAO.save(payment);
         updatedPayments.push(payment);
       }
     }
 
-    return res
-      .status(200)
-      .json({ message: "Cập nhật thành công", payments: updatedPayments });
+    return res.status(200).json({
+      message: "Cập nhật thành công",
+      payments: updatedPayments,
+    });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ message: err.message || "Internal Server Error" });
+    return res.status(500).json({
+      message: err.message || "Internal Server Error",
+    });
   }
 };
 

@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 const Account = require("../models/account");
 const { differenceInDays } = require("date-fns");
+const { generateUniqueAccountNumber } = require("../utils/utils");
 
 const savingAccountSchema = new Schema(
   {
@@ -112,6 +113,32 @@ savingAccountSchema.methods.withdraw = async function (checkingAccount) {
   await Promise.all([checkingAccount.save(), this.save(), transaction.save()]);
 
   return withdrawalDetails;
+};
+savingAccountSchema.statics.createSavingAccount = async function ({
+  customerId,
+  savingType,
+}) {
+  const now = new Date();
+  let nextEarningDate = new Date(now);
+  let finishEarningDate = null;
+
+  if (savingType.maturityPeriod !== 0) {
+    finishEarningDate = new Date(now);
+    finishEarningDate.setMonth(now.getMonth() + savingType.maturityPeriod);
+  }
+
+  const newAccountNumber = await generateUniqueAccountNumber();
+
+  const newSavingAccount = new this({
+    accountNumber: newAccountNumber,
+    owner: customerId,
+    balance: 0,
+    savingTypeInterest: savingType._id,
+    nextEarningDate,
+    finishEarningDate,
+  });
+
+  return newSavingAccount;
 };
 
 const SavingAccount = Account.discriminator(

@@ -1,15 +1,6 @@
 const Customer = require("../models/customer");
-const bcrypt = require("bcrypt");
 
 class CustomerDAO {
-  async createCustomer(newCustomer) {
-    try {
-      await newCustomer.save();
-    } catch (error) {
-      throw error;
-    }
-  }
-
   async getCustomerProfile(customerId) {
     try {
       const foundUser = await Customer.findById(customerId);
@@ -57,10 +48,10 @@ class CustomerDAO {
       throw err;
     }
   }
-  async saveCustomer(customer) {
+
+  async save(customer) {
     try {
-      const savedCustomer = await customer.save();
-      return savedCustomer;
+      return await customer.save();
     } catch (err) {
       throw new Error(`Failed to save customer: ${err.message}`);
     }

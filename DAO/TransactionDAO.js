@@ -1,11 +1,9 @@
 const Transaction = require("../models/transaction");
-const Account = require("../models/account");
-
+const AccountDAO = require("../DAO/AccountDAO");
 class TransactionDAO {
   async getHistoryByUserId(userId) {
     try {
-      const accounts = await Account.find({ owner: userId });
-
+      const accounts = await AccountDAO.findAccountById(userId);
       const accountNumbers = accounts.map((acc) => acc.accountNumber);
       if (accountNumbers.length === 0) {
         return [];
@@ -24,12 +22,11 @@ class TransactionDAO {
     }
   }
 
-  async createTransfer(transactionInstance) {
+  async save(transaction) {
     try {
-      return transactionInstance.save();
-    } catch (error) {
-      console.error("Lỗi trong DAO (createTransfer):", error.message);
-      throw error;
+      return await transaction.save();
+    } catch (err) {
+      throw err;
     }
   }
   async sumTodayTransfers(accountNumber) {

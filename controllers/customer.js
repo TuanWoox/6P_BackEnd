@@ -47,7 +47,7 @@ module.exports.resetPassword = async (req, res, next) => {
     const customer = await CustomerDAO.getCustomerProfile(customerId);
     if (!customer) throw new Error("Customer not found");
     customer.changePassword(newPassword);
-    await customer.save();
+    await CustomerDAO.save(customer);
     return res.status(200).json({ message: "Đặt lại mật khẩu thành công" });
   } catch (e) {
     return res.status(500).json({ message: "Lỗi máy chủ nội bộ" });
@@ -126,7 +126,7 @@ module.exports.updateCustomerProfile = async (req, res, next) => {
 
     const updatedData = { fullName, email, phoneNumber, dateOfBirth, address };
     customer.updateCustomerProfile(updatedData);
-    await CustomerDAO.saveCustomer(customer);
+    await CustomerDAO.save(customer);
 
     return res
       .status(200)
@@ -185,9 +185,7 @@ module.exports.transferMoney = async (req, res) => {
     ]);
 
     // Persist transaction
-    const savedTransaction = await TransactionDAO.createTransfer(
-      newTransaction
-    );
+    const savedTransaction = await TransactionDAO.save(newTransaction);
     res.status(201).json(savedTransaction);
   } catch (err) {
     res.status(500).json({ message: err.message || "Internal Server Error" });
