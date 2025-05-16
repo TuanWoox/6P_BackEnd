@@ -1,48 +1,73 @@
-# 6P Bank Backend
+<div align="center">
+  <h1>6P Bank Backend</h1>
+  <p>A modern, secure banking system API built with Node.js</p>
+  
+  <p>
+    <img src="https://img.shields.io/badge/-NODE.JS-6DA55F?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
+    <img src="https://img.shields.io/badge/-EXPRESS.JS-2E2E2E?style=flat-square&logo=express&logoColor=white" alt="Express.js" />
+    <img src="https://img.shields.io/badge/-MONGODB-449A45?style=flat-square&logo=mongodb&logoColor=white" alt="MongoDB" />
+    <img src="https://img.shields.io/badge/-BOOTSTRAP-7952B3?style=flat-square&logo=bootstrap&logoColor=white" alt="Bootstrap" />
+  </p>
+</div>
 
-A comprehensive backend system for a banking application with features including checking accounts, saving accounts, loan management, and secure transactions.
+---
 
-## Features
+## ✨ Features
 
-- **Authentication System**
+<table>
+  <tr>
+    <td>
+      <h3>🔐 Authentication System</h3>
+      <ul>
+        <li>JWT-based authentication with refresh tokens</li>
+        <li>Secure password handling</li>
+        <li>Email verification with OTP</li>
+      </ul>
+    </td>
+    <td>
+      <h3>💳 Account Management</h3>
+      <ul>
+        <li>Checking accounts with transaction limits</li>
+        <li>Saving accounts with various interest rates</li>
+        <li>Loan accounts with payment schedules</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h3>💸 Transaction Processing</h3>
+      <ul>
+        <li>Money transfers between accounts</li>
+        <li>Transaction history tracking</li>
+        <li>Daily transaction limits</li>
+      </ul>
+    </td>
+    <td>
+      <h3>👤 Customer Management</h3>
+      <ul>
+        <li>User profile management</li>
+        <li>Password reset and change</li>
+        <li>Account statements and history</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-  - JWT-based authentication with refresh tokens
-  - Secure password handling
-  - Email verification with OTP
+## 📁 Project Structure
 
-- **Account Management**
-
-  - Checking accounts with transaction limits
-  - Saving accounts with various interest rates
-  - Loan accounts with payment schedules
-
-- **Transaction Processing**
-
-  - Money transfers between accounts
-  - Transaction history tracking
-  - Daily transaction limits
-
-- **Customer Management**
-  - User profile management
-  - Password reset and change
-
-## Tech Stack
-
-- Node.js with Express
-- MongoDB with Mongoose ODM
-- JWT for authentication
-- Nodemailer for email services
-- bcrypt for password hashing
-
-## Project Structure
-
-- `/models` - Database schemas and models
-- `/controllers` - Request handlers
-- `/routes` - API routes
-- `/middleware` - Authentication and request processing middleware
-- `/DAO` - Data Access Objects for database operations
-- `/utils` - Utility functions
-- `/config` - Configuration files
+```
+6P_BackEnd/
+├── config/          # Configuration files
+├── controllers/     # Request handlers
+├── DAO/             # Data Access Objects
+├── middleware/      # Express middleware
+├── models/          # Mongoose schemas
+├── routes/          # API routes
+├── utils/           # Utility functions
+├── .env             # Environment variables
+├── main.js          # Application entry point
+└── README.md        # Project documentation
+```
 
 ## API Endpoints
 
@@ -99,7 +124,7 @@ A comprehensive backend system for a banking application with features including
    npm install
    ```
 
-3. **Environment Configuration**
+3. **Environment Configuration**W
 
    Create a `.env` file in the root directory with the following variables:
 
